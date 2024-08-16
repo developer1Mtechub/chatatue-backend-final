@@ -120,6 +120,24 @@ const createEvent = async (req, res, next) => {
       return responseSender(res, 400, false, "Failed to create event");
     }
 
+    // CREATE GROUP FOR EVENT
+    const {
+      rows: [group],
+    } = await pool.query(
+      `INSERT INTO groups (event_id, type, name, image) VALUES (
+      $1, $2, $3 , $4) RETURNING *
+      `,
+      [rows[0].id, "EVENT", rows[0].name, uploadedImages[0].secure_url]
+    );
+
+    // INSERT INTO GROUP MEMBERS
+    await pool.query(
+      `
+      INSERT INTO group_members (user_id, group_id , role) VALUES ($1, $2, $3)
+      `,
+      [creator_id, group.id, "CREATOR"]
+    );
+
     await pool.query("COMMIT");
 
     return responseSender(
@@ -141,12 +159,15 @@ const joinEvent = async (req, res, next) => {
   const { userId } = req.user;
 
   try {
+    await pool.query("BEGIN");
+
     const { rowCount: memberExists } = await pool.query(
       `SELECT * FROM event_members WHERE event_id = $1 AND user_id = $2 LIMIT 1`,
       [event_id, userId]
     );
 
     if (memberExists > 0) {
+      await pool.query("ROLLBACK");
       return responseSender(
         res,
         400,
@@ -161,8 +182,24 @@ const joinEvent = async (req, res, next) => {
     );
 
     if (rowCount === 0) {
+      await pool.query("ROLLBACK");
       return responseSender(res, 400, false, "Failed to join event");
     }
+
+    const {
+      rows: [group],
+    } = await pool.query(`SELECT * FROM groups WHERE event_id = $1 LIMIT 1`, [
+      rows[0].event_id,
+    ]);
+
+    await pool.query(
+      `
+      INSERT INTO group_members (user_id, group_id , role) VALUES ($1, $2, $3)
+      `,
+      [rows[0].user_id, group.id, "MEMBER"]
+    );
+
+    await pool.query("COMMIT");
 
     return responseSender(
       res,
@@ -172,6 +209,7 @@ const joinEvent = async (req, res, next) => {
       rows[0]
     );
   } catch (error) {
+    await pool.query("ROLLBACK");
     logger.error(error.stack);
     next(error);
   }

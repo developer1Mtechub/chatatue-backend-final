@@ -414,3 +414,38 @@ CREATE TABLE IF NOT EXISTS reports (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS groups(
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    club_id UUID REFERENCES club(id) ON DELETE CASCADE,
+    event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+    type VARCHAR NOT NULL CHECK (type IN ('PRIVATE', 'CLUB', 'EVENT')),
+    name VARCHAR(255) NOT NULL,
+    image TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    sender_id UUID REFERENCES users(id),
+    recipient_id UUID REFERENCES users(id), -- Only for private messages
+    group_id UUID REFERENCES groups(id), -- Only for group chat messages
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    message_time DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+
+CREATE TABLE IF NOT EXISTS group_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    group_id UUID NOT NULL REFERENCES groups(id),
+    role VARCHAR NOT NULL CHECK (role IN ('MEMBER', 'ADMIN', 'CREATOR')),
+    joined_at TIMESTAMP DEFAULT NOW()
+);
+
+

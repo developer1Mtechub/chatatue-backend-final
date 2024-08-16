@@ -45,13 +45,31 @@ const createClub = async (req, res, next) => {
       [rows[0].user_id, rows[0].id, "CREATOR"]
     );
 
+    // CREATE GROUP FOR CLUB
+    const {
+      rows: [group],
+    } = await pool.query(
+      `INSERT INTO groups (club_id, type, name, image) VALUES (
+      $1, $2, $3 , $4) RETURNING *
+      `,
+      [rows[0].id, "CLUB", rows[0].name, imagesPath[0].secure_url]
+    );
+
+    // INSERT INTO GROUP MEMBERS
+    await pool.query(
+      `
+      INSERT INTO group_members (user_id, group_id , role) VALUES ($1, $2, $3)
+      `,
+      [user_id, group.id, "CREATOR"]
+    );
+
     await pool.query("COMMIT");
 
     return responseSender(res, 201, true, "Club created successfully", rows[0]);
   } catch (error) {
     await pool.query("ROLLBACK");
     if (error.code === "23514") {
-      return responseSender(res, 400, false, "Unexpected Erro Occured");
+      return responseSender(res, 400, false, "Unexpected Error Occured");
     }
     logger.error(error.stack);
     next(error);
@@ -145,19 +163,17 @@ const getClubs = async (req, res, next) => {
     if (search) {
       whereClauses.push(`c.name ILIKE $${queryParams.length + 1}`);
       queryParams.push(`%${search}%`);
-    } else {
-      if (!searcher_id) {
-        return responseSender(res, 400, false, "Searcher ID is required");
+    } else if (!search && !user_id) {
+      if (searcher_id) {
+        whereClauses.push(`EXISTS (
+          SELECT 1
+          FROM sub_category sc
+          JOIN users ui ON  sc.id = ANY(ui.interest_ids)
+          WHERE sc.category_id = ANY(c.category_ids)
+          AND ui.id = $${queryParams.length + 1}
+          )`);
+        queryParams.push(searcher_id);
       }
-
-      whereClauses.push(`EXISTS (
-        SELECT 1
-        FROM sub_category sc
-        JOIN users ui ON  sc.id = ANY(ui.interest_ids)
-        WHERE sc.category_id = ANY(c.category_ids)
-        AND ui.id = $${queryParams.length + 1}
-        )`);
-      queryParams.push(searcher_id);
     }
 
     if (user_id) {

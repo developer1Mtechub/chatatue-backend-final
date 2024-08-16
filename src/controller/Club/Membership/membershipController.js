@@ -121,6 +121,19 @@ const updateMembership = async (req, res, next) => {
         `INSERT INTO club_members (user_id , club_id) VALUES ($1, $2)`,
         [rows[0].user_id, rows[0].club_id]
       );
+
+      const {
+        rows: [group],
+      } = await pool.query(`SELECT * FROM groups WHERE club_id = $1 LIMIT 1`, [
+        rows[0].club_id,
+      ]);
+
+      await pool.query(
+        `
+        INSERT INTO group_members (user_id, group_id , role) VALUES ($1, $2, $3)
+        `,
+        [rows[0].user_id, group.id, "MEMBER"]
+      );
     }
 
     await pool.query("COMMIT");
@@ -256,17 +269,36 @@ const removeClubMember = async (req, res, next) => {
   const { id } = req.params;
 
   try {
+    await pool.query("BEGIN");
+
     const { rows, rowCount } = await pool.query(
       `DELETE FROM club_members WHERE id = $1 RETURNING *`,
       [id]
     );
 
     if (rowCount === 0) {
+      await pool.query("ROLLBACK");
       return responseSender(res, 404, false, "Club member not found");
     }
 
+    const {
+      rows: [group],
+    } = await pool.query(`SELECT * FROM groups WHERE club_id = $1 LIMIT 1`, [
+      rows[0].club_id,
+    ]);
+
+    if (group) {
+      await pool.query(
+        `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
+        [group.id, rows[0].user_id]
+      );
+    }
+
+    await pool.query("COMMIT");
+
     responseSender(res, 200, true, "Club member removed successfully", rows[0]);
   } catch (error) {
+    await pool.query("ROLLBACK");
     logger.error(error.stack);
     next(error);
   }

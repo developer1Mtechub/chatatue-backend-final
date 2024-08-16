@@ -933,17 +933,12 @@ const deleteUserAccount = async (req, res, next) => {
 
   try {
     const { rowCount, rows } = await pool.query(
-      "DELETE FROM users WHERE id =$1 RETURNING *",
+      "DELETE FROM users WHERE id = $1 RETURNING *",
       [id]
     );
 
     if (rowCount === 0) {
-      return responseSender(
-        res,
-        404,
-        false,
-        "User not found or already deleted."
-      );
+      return responseSender(res, 404, false, "User not found");
     }
 
     return responseSender(

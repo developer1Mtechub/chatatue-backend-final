@@ -30,6 +30,7 @@ const contactQueriesRoutes = require("./contactRoutes");
 const faqRoutes = require("./faqRoutes");
 const scheduleRoutes = require("./club/scheduleRoutes");
 const reportRoutes = require("./users/reportRoutes");
+const chatRoutes = require("./chat/chatRoutes");
 
 // use routes
 router.use("/users", userRoutes);
@@ -91,5 +92,7 @@ router.use("/faq", faqRoutes);
 router.use("/schedule", scheduleRoutes);
 
 router.use("/reports", reportRoutes);
+
+router.use("/chats", chatRoutes);
 
 module.exports = router;
