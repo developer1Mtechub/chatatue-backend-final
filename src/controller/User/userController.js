@@ -119,10 +119,10 @@ const createUser = async (req, res, next) => {
       );
 
       // send welcome mail
-      await welcomeEmailSender({
-        email,
-        subject: "Welcome To Chatatue",
-      });
+      // await welcomeEmailSender({
+      //   email,
+      //   subject: "Welcome To Chatatue",
+      // });
 
       return responseSender(res, 201, true, "Signup Success", {
         ...user,
@@ -153,10 +153,10 @@ const createUser = async (req, res, next) => {
       );
 
       // send welcome mail
-      await welcomeEmailSender({
-        email,
-        subject: "Welcome To Chatatue",
-      });
+      // await welcomeEmailSender({
+      //   email,
+      //   subject: "Welcome To Chatatue",
+      // });
 
       return responseSender(res, 201, true, "Signup Success.", {
         ...user,
@@ -186,10 +186,10 @@ const createUser = async (req, res, next) => {
       );
 
       // send welcome mail
-      await welcomeEmailSender({
-        email,
-        subject: "Welcome To Chatatue",
-      });
+      // await welcomeEmailSender({
+      //   email,
+      //   subject: "Welcome To Chatatue",
+      // });
 
       return responseSender(res, 201, true, "Signup Success", {
         ...user,

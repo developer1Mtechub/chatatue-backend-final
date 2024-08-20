@@ -89,8 +89,8 @@ const eventValidation = {
       "any.required": "Event ID is required",
     }),
     user_id: Joi.string().uuid().required().messages({
-      "string.guid": "Event ID must be a valid UUID",
-      "any.required": "Event ID is required",
+      "string.guid": "User ID must be a valid UUID",
+      "any.required": "User ID is required",
     }),
   }),
 
