@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
+
 const {
   validateBody,
   validateQuery,
@@ -20,7 +20,7 @@ const router = Router();
 router
   .route("/send-request")
   .post(
-    isLoggedIn,
+    
     validateBody(clubValidations.membershipRequest),
     sendMembershipRequest
   );
@@ -28,25 +28,25 @@ router
 router
   .route("/:id")
   .patch(
-    isLoggedIn,
+    
     validateBody(clubValidations.updateMembership),
     updateMembership
   );
 
 router
   .route("/:club_id/members")
-  .get(isLoggedIn, validateQuery(clubValidations.getMembers), getClubMembers);
+  .get( validateQuery(clubValidations.getMembers), getClubMembers);
 
 router
   .route("/update-role/:id")
   .patch(
-    isLoggedIn,
+    
     validateBody(clubValidations.memberRole),
     updateMemberRole
   );
 
-router.route("/join-clubs/:user_id").get(isLoggedIn, getJoinClubs);
-router.route("/requests/:club_id").get(isLoggedIn, getMembershipRequests);
-router.route("/:id/remove").delete(isLoggedIn, removeClubMember);
+router.route("/join-clubs/:user_id").get( getJoinClubs);
+router.route("/requests/:club_id").get( getMembershipRequests);
+router.route("/:id/remove").delete( removeClubMember);
 
 module.exports = router;

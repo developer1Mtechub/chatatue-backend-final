@@ -1,43 +1,21 @@
 const pool = require("../../../config/db");
 const logger = require("../../../config/logger");
-const {
-  uploadToCloudinary,
-  deleteCloudinaryFile,
-  deleteAllCloudinaryFiles,
-} = require("../../../utilities/cloudinary");
 const { pagination } = require("../../../utilities/pagination");
 const { responseSender } = require("../../../utilities/responseHandlers");
 
 const createHighlight = async (req, res, next) => {
-  if (req?.files?.length === 0) {
-    return responseSender(res, 400, false, "Please upload atleast one image");
-  }
-  const { club_id, title, description } = req.body;
-  const { userId } = req.user;
+  const { club_id, title, description, userId, images } = req.body;
 
   try {
     await pool.query("BEGIN");
 
-    let uploadedImages = [];
-
-    if (req.files) {
-      for (const file of req.files) {
-        const image = await uploadToCloudinary(file.path, "Highlights");
-        uploadedImages.push(image);
-      }
-    }
-
     const { rows, rowCount } = await pool.query(
       `INSERT INTO club_highlights (club_id, user_id, title, images, description) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [club_id, userId, title, JSON.stringify(uploadedImages), description]
+      [club_id, userId, title, JSON.stringify(images), description]
     );
 
     if (rowCount === 0) {
       await pool.query("ROLLBACK");
-
-      for (const image of uploadedImages) {
-        await deleteCloudinaryFile(image.public_id);
-      }
       return responseSender(res, 400, false, "Unexpected error occurred");
     }
 
@@ -161,12 +139,6 @@ const deleteHighlight = async (req, res, next) => {
       return responseSender(res, 404, false, "Highlight not found");
     }
 
-    if (rows[0]?.images?.length > 0) {
-      for (let image of rows[0].images) {
-        await deleteCloudinaryFile(image.public_id);
-      }
-    }
-
     await pool.query("COMMIT");
 
     return responseSender(res, 200, true, "Highlight deleted", rows[0]);
@@ -179,7 +151,7 @@ const deleteHighlight = async (req, res, next) => {
 
 const updateHighlight = async (req, res, next) => {
   const { id } = req.params;
-  const { club_id, user_id, title, description } = req.body;
+  const { club_id, userId, title, description, image } = req.body;
 
   try {
     const fetchHighlight = await pool.query(
@@ -201,9 +173,9 @@ const updateHighlight = async (req, res, next) => {
       index++;
     }
 
-    if (user_id) {
+    if (userId) {
       query += `user_id = $${index}, `;
-      values.push(user_id);
+      values.push(userId);
       index++;
     }
 
@@ -219,12 +191,11 @@ const updateHighlight = async (req, res, next) => {
       index++;
     }
 
-    if (req.file) {
-      const uploadImage = await uploadToCloudinary(req.file.path, "Highlights");
+    if (image) {
       query += `images = jsonb_set(images, '{${
         fetchHighlight.rows[0].images.length + 1
       }}', $${index}, true), `;
-      values.push(JSON.stringify(uploadImage));
+      values.push(JSON.stringify(image));
       index++;
     }
 
@@ -282,8 +253,6 @@ const removeHighlightImages = async (req, res, next) => {
         req
       );
     }
-
-    await deleteAllCloudinaryFiles(publicIds);
 
     await pool.query("COMMIT");
 

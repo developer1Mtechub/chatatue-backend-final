@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
+
 const {
   createFitnessGoal,
   getFitnessGoals,
@@ -11,10 +11,10 @@ const {
 
 // router
 const router = express.Router();
-router.route("/create").post(isLoggedIn, createFitnessGoal);
-router.route("/").get(isLoggedIn, getFitnessGoals);
-router.route("/:id").get(isLoggedIn, getFitnessGoal);
-router.route("/:id/update").patch(isLoggedIn, updateFitnessGoal);
-router.route("/:id/delete").delete(isLoggedIn, deleteFitnessGoal);
+router.route("/create").post( createFitnessGoal);
+router.route("/").get( getFitnessGoals);
+router.route("/:id").get( getFitnessGoal);
+router.route("/:id/update").patch( updateFitnessGoal);
+router.route("/:id/delete").delete( deleteFitnessGoal);
 
 module.exports = router;

@@ -5,7 +5,7 @@ const { responseSender } = require("../../utilities/responseHandlers");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const createConnectedAccount = async (req, res, next) => {
-  const { userId } = req.user;
+  const { userId } = req.params;
   try {
     const { rows, rowCount } = await pool.query(
       `SELECT * FROM USERS WHERE id = $1 LIMIT 1`,
@@ -38,7 +38,7 @@ const createConnectedAccount = async (req, res, next) => {
 };
 
 const createAccountLink = async (req, res, next) => {
-  const { userId } = req.user;
+  const { userId } = req.params;
 
   try {
     const { rows, rowCount } = await pool.query(
@@ -82,7 +82,7 @@ const createAccountLink = async (req, res, next) => {
 };
 
 const checkRequirements = async (req, res, next) => {
-  const { userId } = req.user;
+  const { userId } = req.params;
   try {
     const { rows, rowCount } = await pool.query(
       `SELECT * FROM USERS WHERE id = $1 LIMIT 1`,

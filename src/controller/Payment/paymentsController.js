@@ -1,4 +1,3 @@
-
 const pool = require("../../config/db");
 const logger = require("../../config/logger");
 const { responseSender } = require("../../utilities/responseHandlers");
@@ -8,8 +7,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // create customer
 const createPaymentIntent = async (req, res, next) => {
-  const { userId } = req.user;
-  const { amount } = req.body;
+  const { amount, userId } = req.body;
 
   try {
     const {
@@ -60,8 +58,7 @@ const createPaymentIntent = async (req, res, next) => {
 };
 
 const upcomingPayments = async (req, res, next) => {
-  const { userId } = req.user;
-  const { amount, recipient_id, transaction_type, details } = req.body;
+  const { amount, recipient_id, transaction_type, details, userId } = req.body;
 
   try {
     await pool.query("BEGIN");
@@ -119,8 +116,7 @@ const upcomingPayments = async (req, res, next) => {
 };
 
 const transferAndWithdraw = async (req, res, next) => {
-  const { userId } = req.user;
-  const { amount } = req.body;
+  const { amount, userId } = req.body;
 
   try {
     await pool.query("BEGIN");
@@ -222,7 +218,7 @@ const transferAndWithdraw = async (req, res, next) => {
 };
 
 const updateWallet = async (req, res, next) => {
-  const { userId } = req.user;
+  const { userId } = req.params;
 
   try {
     await pool.query("BEGIN");
@@ -334,7 +330,7 @@ const updateWallet = async (req, res, next) => {
 
 // get user wallet
 const getWallet = async (req, res, next) => {
-  const { userId } = req.user;
+  const { userId } = req.params;
 
   try {
     // check user wallet
@@ -375,7 +371,7 @@ const getWallet = async (req, res, next) => {
 
 // payment history
 const getPaymentHistory = async (req, res, next) => {
-  const { userId } = req.user;
+  const { userId } = req.params;
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 100;
   const sortField = req.query.sortField || "created_at";

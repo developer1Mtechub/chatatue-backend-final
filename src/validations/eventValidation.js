@@ -6,6 +6,14 @@ const eventValidation = {
       "string.guid": "Club ID must be a valid UUID",
       "any.required": "Club ID is required",
     }),
+    userId: Joi.string().uuid().required().messages({
+      "string.guid": "User ID must be a valid UUID",
+      "any.required": "User ID is required",
+    }),
+    images: Joi.array().items(Joi.object()).required().messages({
+      "array.required": "Event images are required",
+      "array.items": "Each event image must be an object",
+    }),
     name: Joi.string().max(255).required().messages({
       "string.max": "Event name cannot be more than 255 characters",
       "any.required": "Event name is required",
@@ -146,6 +154,10 @@ const eventValidation = {
           "Badge type must be one of 'GOLD', 'SILVER', 'PLATINUM', 'PRIZE'",
         "any.required": "Badge type is required",
       }),
+    badge_icon: Joi.object().required().messages({
+      "object.base": "Badge icon must be an object",
+      "any.required": "Badge icon is required",
+    }),
     amount: Joi.when("badge_type", {
       is: "PRIZE",
       then: Joi.number().required().messages({

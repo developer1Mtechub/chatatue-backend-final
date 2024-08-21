@@ -1,6 +1,5 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
-const upload = require("../../middleware/multer");
+
 const {
   validateBody,
 } = require("../../middleware/validations/validationMiddleware");
@@ -29,23 +28,20 @@ const router = Router();
 router
   .route("/create")
   .post(
-    isLoggedIn,
-    upload.array("images"),
     checkRole(["CREATOR"]),
     validateBody(productsValidations.createProductSchema),
     createProduct
   );
 
-router.route("/").get(isLoggedIn, getProducts);
-router.route("/:id").get(isLoggedIn, getProduct);
-router.route("/:id").patch(isLoggedIn, upload.single("image"), updateProduct);
-router.route("/remove-images").delete(isLoggedIn, removeProductImages);
-router.route("/:id").delete(isLoggedIn, deleteProduct);
+router.route("/").get(getProducts);
+router.route("/:id").get(getProduct);
+router.route("/:id").patch(updateProduct);
+router.route("/remove-images").delete(removeProductImages);
+router.route("/:id").delete(deleteProduct);
 
 router
   .route("/add-discount")
   .post(
-    isLoggedIn,
     validateBody(productsValidations.addDiscountSchema),
     createProductDiscount
   );
@@ -53,21 +49,16 @@ router
 router
   .route("/calculate-discount")
   .post(
-    isLoggedIn,
     validateBody(productsValidations.calculateDiscountSchema),
     calculateDiscount
   );
 
 router
   .route("/purchase")
-  .post(
-    isLoggedIn,
-    validateBody(productsValidations.purchaseSchema),
-    purchaseProduct
-  );
+  .post(validateBody(productsValidations.purchaseSchema), purchaseProduct);
 
-router.route("/purchase/:id/update").patch(isLoggedIn, updatePurchaseStatus);
-router.route("/get/purchase-items").get(isLoggedIn, getPurchaseItems);
-router.route("/get/:id/item").get(isLoggedIn, getPurchaseItem);
+router.route("/purchase/:id/update").patch(updatePurchaseStatus);
+router.route("/get/purchase-items").get(getPurchaseItems);
+router.route("/get/:id/item").get(getPurchaseItem);
 
 module.exports = router;

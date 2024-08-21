@@ -1,12 +1,11 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
 const {
   createReview,
   getReviews,
 } = require("../../controller/Reviews/reviewController");
 const router = Router();
 
-router.route("/create").post(isLoggedIn, createReview);
-router.route("/").get(isLoggedIn, getReviews);
+router.route("/create").post( createReview);
+router.route("/").get( getReviews);
 
 module.exports = router;

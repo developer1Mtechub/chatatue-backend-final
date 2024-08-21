@@ -1,5 +1,4 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
 const {
   validateBody,
 } = require("../../middleware/validations/validationMiddleware");
@@ -12,7 +11,6 @@ const {
   deleteHighlight,
   removeHighlightImages,
 } = require("../../controller/Club/Highlights/highlightsController");
-const upload = require("../../middleware/multer");
 const { checkRole } = require("../../middleware/auth/checkRole");
 
 const router = Router();
@@ -20,17 +18,15 @@ const router = Router();
 router
   .route("/create")
   .post(
-    isLoggedIn,
-    upload.array("images"),
     checkRole(["ADMIN", "CREATOR"]),
     validateBody(clubValidations.postsShema),
     createHighlight
   );
 
-router.route("/:id").get(isLoggedIn, getHighlight);
-router.route("/").get(isLoggedIn, getHighlights);
-router.route("/:id").patch(isLoggedIn, upload.single("image"), updateHighlight);
-router.route("/remove-images").delete(isLoggedIn, removeHighlightImages);
-router.route("/:id").delete(isLoggedIn, deleteHighlight);
+router.route("/:id").get(getHighlight);
+router.route("/").get(getHighlights);
+router.route("/:id").patch(updateHighlight);
+router.route("/remove-images").delete(removeHighlightImages);
+router.route("/:id").delete(deleteHighlight);
 
 module.exports = router;

@@ -1,6 +1,5 @@
 const express = require("express");
 
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
 const {
   createRunningTime,
   getRunningTimes,
@@ -11,10 +10,10 @@ const {
 
 // router
 const router = express.Router();
-router.route("/create").post(isLoggedIn, createRunningTime);
-router.route("/").get(isLoggedIn, getRunningTimes);
-router.route("/:id").get(isLoggedIn, getRunningTime);
-router.route("/:id/update").patch(isLoggedIn, updateRunningTime);
-router.route("/:id/delete").delete(isLoggedIn, deleteRunningTime);
+router.route("/create").post( createRunningTime);
+router.route("/").get( getRunningTimes);
+router.route("/:id").get( getRunningTime);
+router.route("/:id/update").patch( updateRunningTime);
+router.route("/:id/delete").delete( deleteRunningTime);
 
 module.exports = router;

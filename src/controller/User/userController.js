@@ -2,11 +2,7 @@ const pool = require("../../config/db");
 const logger = require("../../config/logger");
 const { verifyEmailSender } = require("../../services/verifyEmailSender");
 const { welcomeEmailSender } = require("../../services/welcomeEmailSender");
-const {
-  updateCloudinaryFile,
-  uploadToCloudinary,
-  deleteAllCloudinaryFiles,
-} = require("../../utilities/cloudinary");
+
 const comparePassword = require("../../utilities/helpers/comparePassword");
 const generatePasswordHash = require("../../utilities/helpers/generateHashedPassword");
 const generateToken = require("../../utilities/helpers/generateToken");
@@ -500,6 +496,8 @@ const resetPassword = async (req, res, next) => {
 const updateUserAccount = async (req, res, next) => {
   const {
     username,
+    profile_image,
+    profile_showcase_photos,
     bio,
     gender,
     age,
@@ -515,6 +513,13 @@ const updateUserAccount = async (req, res, next) => {
     long,
     isPublicView,
     interest_ids,
+    goals_visible,
+    interests_visible,
+    showcase_visible,
+    experience_level_visible,
+    social_preferences_visible,
+    social_media_links_visible,
+    running_times_visible,
   } = req.body;
   const { id } = req.params;
 
@@ -572,7 +577,7 @@ const updateUserAccount = async (req, res, next) => {
     }
 
     if (account_delete_status) {
-      query += `account_delete_status = $${index} , account_delete_date = NOW()`;
+      query += `account_delete_status = $${index}, account_delete_date = NOW(),`;
       values.push(account_delete_status);
       index++;
     }
@@ -608,8 +613,7 @@ const updateUserAccount = async (req, res, next) => {
     }
 
     if (social_link_ids?.length > 0) {
-      query += `social_link_ids = 
-      $${index},`;
+      query += `social_link_ids = $${index},`;
       values.push(social_link_ids);
       index++;
     }
@@ -623,64 +627,73 @@ const updateUserAccount = async (req, res, next) => {
     if (long) {
       query += `long = $${index},`;
       values.push(long);
+      index++;
     }
 
-    if (isPublicView) {
-      query += ` is_public_view = $${index},`;
+    if (isPublicView !== undefined) {
+      query += `is_public_view = $${index},`;
       values.push(isPublicView);
       index++;
     }
 
-    if (req.files) {
-      if (req.files["profile_image"]) {
-        // check if image already exists
-        const image = userRows[0].profile_image;
-
-        const uploadImage =
-          image !== null
-            ? await updateCloudinaryFile(
-                req.files["profile_image"][0].path,
-                image.public_id
-              )
-            : await uploadToCloudinary(
-                req.files["profile_image"][0].path,
-                `ProfileImages`
-              );
-
-        query += `profile_image = $${index}, `;
-        values.push(uploadImage);
-        index++;
-      }
-
-      if (
-        req.files["profile_showcase_photos"] &&
-        req.files["profile_showcase_photos"].length > 0
-      ) {
-        const uploadPromises = req.files["profile_showcase_photos"].map(
-          async (file) => {
-            const uploadImage = await uploadToCloudinary(
-              file.path,
-              "ProfileShowCasePhotos"
-            );
-            return uploadImage;
-          }
-        );
-
-        const uploadedImages = await Promise.all(uploadPromises);
-
-        const currentImages = userRows[0].profile_showcase_photos || [];
-
-        // Combine current and new images
-        const allImages = currentImages.concat(uploadedImages);
-
-        // Update the query and values to include the new images
-        query += `profile_showcase_photos = $${index}, `;
-        values.push(JSON.stringify(allImages));
-        index++;
-      }
+    if (profile_image) {
+      query += `profile_image = $${index},`;
+      values.push(profile_image);
+      index++;
     }
 
-    query = query.replace(/,\s*$/, "");
+    if (profile_showcase_photos?.length > 0) {
+      const currentImages = userRows[0].profile_showcase_photos || [];
+      const allImages = currentImages.concat(profile_showcase_photos);
+      query += `profile_showcase_photos = $${index},`;
+      values.push(JSON.stringify(allImages));
+      index++;
+    }
+
+    // Add privacy settings updates
+    if (goals_visible !== undefined) {
+      query += `goals_visible = $${index},`;
+      values.push(goals_visible);
+      index++;
+    }
+
+    if (interests_visible !== undefined) {
+      query += `interests_visible = $${index},`;
+      values.push(interests_visible);
+      index++;
+    }
+
+    if (showcase_visible !== undefined) {
+      query += `showcase_visible = $${index},`;
+      values.push(showcase_visible);
+      index++;
+    }
+
+    if (experience_level_visible !== undefined) {
+      query += `experience_level_visible = $${index},`;
+      values.push(experience_level_visible);
+      index++;
+    }
+
+    if (social_preferences_visible !== undefined) {
+      query += `social_preferences_visible = $${index},`;
+      values.push(social_preferences_visible);
+      index++;
+    }
+
+    if (social_media_links_visible !== undefined) {
+      query += `social_media_links_visible = $${index},`;
+      values.push(social_media_links_visible);
+      index++;
+    }
+
+    if (running_times_visible !== undefined) {
+      query += `running_times_visible = $${index},`;
+      values.push(running_times_visible);
+      index++;
+    }
+
+    query = query.replace(/,\s*$/, ""); // Remove trailing comma
 
     query += ` WHERE id = $1 RETURNING *`;
 
@@ -908,8 +921,6 @@ const removeUserImages = async (req, res, next) => {
         req
       );
     }
-
-    await deleteAllCloudinaryFiles(publicIds);
 
     await pool.query("COMMIT");
 

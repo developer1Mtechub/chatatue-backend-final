@@ -7,6 +7,12 @@ const paymentValidations = {
       "number.base": "Amount must be a number",
       "number.required": "Amount is required",
     }),
+    userId: Joi.string().uuid().required().messages({
+      "string.empty": "User ID cannot be empty",
+      "string.base": "User ID must be a string",
+      "string.uuid": "User ID must be a valid UUID",
+      "any.required": "User ID is required",
+    }),
   }),
 
   upcomingPayment: Joi.object({
@@ -14,6 +20,12 @@ const paymentValidations = {
       "number.empty": "Amount cannot be empty",
       "number.base": "Amount must be a number",
       "number.required": "Amount is required",
+    }),
+    userId: Joi.string().uuid().required().messages({
+      "string.empty": "User ID cannot be empty",
+      "string.base": "User ID must be a string",
+      "string.uuid": "User ID must be a valid UUID",
+      "any.required": "User ID is required",
     }),
     recipient_id: Joi.string().required().messages({
       "string.empty": "Recipient ID cannot be empty",

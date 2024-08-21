@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
+
 const {
   createConnectedAccount,
   createAccountLink,
@@ -8,8 +8,8 @@ const {
 
 const router = Router();
 
-router.route("/create").post(isLoggedIn, createConnectedAccount);
-router.route("/link-account").post(isLoggedIn, createAccountLink);
-router.route("/check-requirements").get(isLoggedIn, checkRequirements);
+router.route("/create/:userId").post( createConnectedAccount);
+router.route("/link-account/:userId").post( createAccountLink);
+router.route("/check-requirements/:userId").get( checkRequirements);
 
 module.exports = router;

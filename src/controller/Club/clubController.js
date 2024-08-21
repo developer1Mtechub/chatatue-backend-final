@@ -1,42 +1,22 @@
 const pool = require("../../config/db");
 const logger = require("../../config/logger");
-const {
-  uploadToCloudinary,
-  deleteCloudinaryFile,
-  deleteAllCloudinaryFiles,
-} = require("../../utilities/cloudinary");
+
 const { pagination } = require("../../utilities/pagination");
 const { responseSender } = require("../../utilities/responseHandlers");
 
 const createClub = async (req, res, next) => {
-  const { name, description, fee, is_paid, user_id } = req.body;
-
-  if (!req.files) {
-    return responseSender(res, 422, false, "Club image is required");
-  }
-
-  const clubImagePath = req.files.map((file) => file.path);
+  const { name, description, fee, is_paid, user_id, images } = req.body;
 
   try {
     await pool.query("BEGIN");
 
-    let imagesPath = [];
-
-    for (const path of clubImagePath) {
-      const uploadImage = await uploadToCloudinary(path, "Club");
-      imagesPath.push(uploadImage);
-    }
-
     const { rows, rowCount } = await pool.query(
       `INSERT INTO club (name, description, fee, is_paid, user_id , images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [name, description, fee, is_paid, user_id, JSON.stringify(imagesPath)]
+      [name, description, fee, is_paid, user_id, JSON.stringify(images)]
     );
 
     if (rowCount === 0) {
       await pool.query("ROLLBACK");
-      for (const path of imagesPath) {
-        await deleteCloudinaryFile(path.public_id);
-      }
       return responseSender(res, 400, false, "Club not created");
     }
 
@@ -52,7 +32,7 @@ const createClub = async (req, res, next) => {
       `INSERT INTO groups (club_id, type, name, image) VALUES (
       $1, $2, $3 , $4) RETURNING *
       `,
-      [rows[0].id, "CLUB", rows[0].name, imagesPath[0].secure_url]
+      [rows[0].id, "CLUB", rows[0].name, images[0].secure_url]
     );
 
     // INSERT INTO GROUP MEMBERS
@@ -233,7 +213,7 @@ const getClubs = async (req, res, next) => {
 
 const updateClub = async (req, res, next) => {
   const { id } = req.params;
-  const { name, description, fee, is_paid, category_ids } = req.body;
+  const { name, description, fee, is_paid, category_ids, image } = req.body;
 
   try {
     const fetchClub = await pool.query(
@@ -279,12 +259,11 @@ const updateClub = async (req, res, next) => {
       index++;
     }
 
-    if (req.file) {
-      const uploadImage = await uploadToCloudinary(req.file.path, "Club");
+    if (image) {
       query += `images = jsonb_set(images, '{${
         fetchClub.rows[0].images.length + 1
       }}', $${index}, true), `;
-      values.push(JSON.stringify(uploadImage));
+      values.push(JSON.stringify(image));
       index++;
     }
 
@@ -327,10 +306,6 @@ const deleteClub = async (req, res, next) => {
         false,
         "Club not found or already deleted."
       );
-    }
-
-    for (const image of rows[0].images) {
-      await deleteCloudinaryFile(image.public_id);
     }
 
     await pool.query("COMMIT");
@@ -380,8 +355,6 @@ const removeClubImages = async (req, res, next) => {
         req
       );
     }
-
-    await deleteAllCloudinaryFiles(publicIds);
 
     await pool.query("COMMIT");
 

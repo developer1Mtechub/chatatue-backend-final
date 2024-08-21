@@ -1,30 +1,23 @@
 const pool = require("../../../config/db");
 const logger = require("../../../config/logger");
-const {
-  uploadToCloudinary,
-  deleteAllCloudinaryFiles,
-} = require("../../../utilities/cloudinary");
+
+
 const { pagination } = require("../../../utilities/pagination");
 const { responseSender } = require("../../../utilities/responseHandlers");
 
 const createProduct = async (req, res, next) => {
-  if (!req.files) {
-    return responseSender(res, 422, false, "Please select atleast one image");
-  }
-
-  const { club_id, title, description, sizes, materials, price } = req.body;
-  const { userId } = req.user;
+  const {
+    club_id,
+    title,
+    description,
+    sizes,
+    materials,
+    price,
+    userId,
+    images,
+  } = req.body;
 
   try {
-    let uploadedImage = [];
-
-    if (req.files) {
-      for (const file of req.files) {
-        const imageToUpload = await uploadToCloudinary(file.path, "Products");
-        uploadedImage.push(imageToUpload);
-      }
-    }
-
     const { rows, rowCount } = await pool.query(
       `INSERT INTO products (
         club_id, creator_id, title, description, sizes, materials, price , images
@@ -37,7 +30,7 @@ const createProduct = async (req, res, next) => {
         sizes,
         materials,
         price,
-        JSON.stringify(uploadedImage),
+        JSON.stringify(images),
       ]
     );
 
@@ -160,7 +153,8 @@ const getProducts = async (req, res, next) => {
 
 const updateProduct = async (req, res, next) => {
   const { id } = req.params;
-  const { title, description, sizes, materials, price, club_id } = req.body;
+  const { title, description, sizes, materials, price, club_id, image } =
+    req.body;
 
   try {
     const products = await pool.query(`SELECT * FROM products WHERE id = $1`, [
@@ -211,12 +205,11 @@ const updateProduct = async (req, res, next) => {
       index++;
     }
 
-    if (req.file) {
-      const uploadImage = await uploadToCloudinary(req.file.path, "Products");
+    if (image) {
       query += `images = jsonb_set(images, '{${
         products.rows[0].images.length + 1
       }}', $${index}, true), `;
-      values.push(JSON.stringify(uploadImage));
+      values.push(JSON.stringify(image));
       index++;
     }
 
@@ -296,7 +289,6 @@ const removeProductImages = async (req, res, next) => {
       );
     }
 
-    await deleteAllCloudinaryFiles(publicIds);
 
     await pool.query("COMMIT");
 

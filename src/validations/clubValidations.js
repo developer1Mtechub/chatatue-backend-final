@@ -35,7 +35,10 @@ const clubValidations = {
       "string.guid": "User ID must be a valid UUID.",
       "any.required": "User ID is a required field.",
     }),
-    images: Joi.string().optional(),
+    images: Joi.array().items(Joi.object()).required().messages({
+      "array.required": "Event images are required",
+      "array.items": "Each event image must be an object",
+    }),
   }),
 
   createRoute: Joi.object({
@@ -153,8 +156,19 @@ const clubValidations = {
       "string.min": "Title must be at least {{#limit}} characters long.",
     }),
 
+    userId: Joi.string().uuid().required().messages({
+      "string.base": "User ID should be a type of 'text'.",
+      "string.empty": "User ID cannot be an empty field.",
+      "string.guid": "User ID must be a valid UUID.",
+      "any.required": "User ID is a required field.",
+    }),
+
     description: Joi.string().optional(),
     tag: Joi.string().optional(),
+    images: Joi.array().items(Joi.object()).required().messages({
+      "array.required": "Event images are required",
+      "array.items": "Each event image must be an object",
+    }),
   }),
 
   scheduleSchema: Joi.object({

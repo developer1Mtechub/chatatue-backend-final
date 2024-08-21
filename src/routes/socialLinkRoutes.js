@@ -1,6 +1,5 @@
 const express = require("express");
 
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
 const {
   createSocialLink,
   getSocialLinks,
@@ -17,14 +16,10 @@ const socialLinkValidation = require("../validations/socialLinkValidations");
 const router = express.Router();
 router
   .route("/create")
-  .post(
-    isLoggedIn,
-    validateBody(socialLinkValidation.createSocialLink),
-    createSocialLink
-  );
-router.route("/").get(isLoggedIn, getSocialLinks);
-router.route("/:id").get(isLoggedIn, getSocialLink);
-router.route("/:id/update").patch(isLoggedIn, updateSocialLink);
-router.route("/:id/delete").delete(isLoggedIn, deleteSocialLink);
+  .post(validateBody(socialLinkValidation.createSocialLink), createSocialLink);
+router.route("/").get(getSocialLinks);
+router.route("/:id").get(getSocialLink);
+router.route("/:id/update").patch(updateSocialLink);
+router.route("/:id/delete").delete(deleteSocialLink);
 
 module.exports = router;

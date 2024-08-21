@@ -3,8 +3,7 @@ const logger = require("../../config/logger");
 const { responseSender } = require("../../utilities/responseHandlers");
 
 const checkRole = (roles) => async (req, res, next) => {
-  const { club_id } = req.body;
-  const { userId } = req.user;
+  const { club_id, userId } = req.body;
 
   try {
     const { rowCount } = await pool.query(

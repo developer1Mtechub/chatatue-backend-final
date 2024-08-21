@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
+
 const {
   createEventActivity,
   getEventActivities,
@@ -17,14 +17,14 @@ const router = Router();
 router
   .route("/create")
   .post(
-    isLoggedIn,
+    
     validateBody(eventValidation.activitiesSchema),
     createEventActivity
   );
 
-router.route("/").get(isLoggedIn, getEventActivities);
-router.route("/:id").get(isLoggedIn, getEventActivity);
-router.route("/:id").put(isLoggedIn, updateEventActivity);
-router.route("/:id").delete(isLoggedIn, deleteEventActivity);
+router.route("/").get( getEventActivities);
+router.route("/:id").get( getEventActivity);
+router.route("/:id").put( updateEventActivity);
+router.route("/:id").delete( deleteEventActivity);
 
 module.exports = router;

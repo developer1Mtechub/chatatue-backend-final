@@ -1,21 +1,15 @@
 const pool = require("../../config/db");
 const logger = require("../../config/logger");
 const { eventInviteSender } = require("../../services/eventInviteSender");
-const {
-  uploadToCloudinary,
-  deleteCloudinaryFile,
-  deleteAllCloudinaryFiles,
-} = require("../../utilities/cloudinary");
+
 const { pagination } = require("../../utilities/pagination");
 const { responseSender } = require("../../utilities/responseHandlers");
 
 const createEvent = async (req, res, next) => {
-  if (req?.files?.length === 0) {
-    return responseSender(res, 400, false, "Please upload atleast one image");
-  }
-
   const {
     club_id,
+    userId,
+    images,
     name,
     description,
     event_type,
@@ -35,9 +29,6 @@ const createEvent = async (req, res, next) => {
     longitude,
   } = req.body;
 
-  const user = req.user;
-  const creator_id = user?.userId;
-
   try {
     await pool.query("BEGIN");
 
@@ -54,15 +45,6 @@ const createEvent = async (req, res, next) => {
         false,
         "Event with the same name already exists"
       );
-    }
-
-    let uploadedImages = [];
-
-    if (req.files) {
-      for (const file of req.files) {
-        const uploadFile = await uploadToCloudinary(file.path, "Events");
-        uploadedImages.push(uploadFile);
-      }
     }
 
     const { rows, rowCount } = await pool.query(
@@ -90,7 +72,7 @@ const createEvent = async (req, res, next) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 , $14, $15, $16 , $17, $18, $19, $20) RETURNING *`,
       [
         club_id,
-        creator_id,
+        userId,
         name,
         description,
         event_type,
@@ -108,15 +90,13 @@ const createEvent = async (req, res, next) => {
         location,
         latitude,
         longitude,
-        JSON.stringify(uploadedImages),
+        JSON.stringify(images),
       ]
     );
 
     if (rowCount === 0) {
       await pool.query("ROLLBACK");
-      for (const image of uploadedImages) {
-        await deleteCloudinaryFile(image.public_id);
-      }
+
       return responseSender(res, 400, false, "Failed to create event");
     }
 
@@ -127,7 +107,7 @@ const createEvent = async (req, res, next) => {
       `INSERT INTO groups (event_id, type, name, image) VALUES (
       $1, $2, $3 , $4) RETURNING *
       `,
-      [rows[0].id, "EVENT", rows[0].name, uploadedImages[0].secure_url]
+      [rows[0].id, "EVENT", rows[0].name, images[0].secure_url]
     );
 
     // INSERT INTO GROUP MEMBERS
@@ -135,7 +115,7 @@ const createEvent = async (req, res, next) => {
       `
       INSERT INTO group_members (user_id, group_id , role) VALUES ($1, $2, $3)
       `,
-      [creator_id, group.id, "CREATOR"]
+      [userId, group.id, "CREATOR"]
     );
 
     await pool.query("COMMIT");
@@ -155,8 +135,7 @@ const createEvent = async (req, res, next) => {
 };
 
 const joinEvent = async (req, res, next) => {
-  const { event_id } = req.params;
-  const { userId } = req.user;
+  const { event_id, userId } = req.params;
 
   try {
     await pool.query("BEGIN");
@@ -565,6 +544,7 @@ const getEvent = async (req, res, next) => {
 const getEvents = async (req, res, next) => {
   const {
     search,
+    userId,
     distance,
     location,
     creator_id,
@@ -581,12 +561,15 @@ const getEvents = async (req, res, next) => {
     sortOrder = "DESC",
   } = req.query;
 
-  const { userId } = req.user;
   const offset = (page - 1) * limit;
 
   try {
     let whereClauses = [];
     let queryParams = [];
+
+    if (!userId) {
+      return responseSender(res, 400, false, "User ID is required");
+    }
 
     const userResult = await pool.query(
       `SELECT * FROM users WHERE id = $1 LIMIT 1`,
@@ -731,7 +714,7 @@ const getEvents = async (req, res, next) => {
 };
 
 const getJoinedEvents = async (req, res, next) => {
-  const { userId } = req.user;
+  const { userId } = req.params;
 
   const {
     search,
@@ -849,7 +832,7 @@ const getJoinedEvents = async (req, res, next) => {
 };
 
 const userInvitaions = async (req, res, next) => {
-  const { userId } = req.user;
+  const { userId } = req.params;
   const {
     status,
     page = 1,
@@ -931,6 +914,7 @@ const updateEvent = async (req, res, next) => {
 
   const {
     name,
+    image,
     description,
     event_type,
     is_public,
@@ -1065,12 +1049,11 @@ const updateEvent = async (req, res, next) => {
       index++;
     }
 
-    if (req.file) {
-      const uploadImage = await uploadToCloudinary(req.file.path, "Events");
+    if (image) {
       query += `images = jsonb_set(images, '{${
         fetchEvent?.rows[0]?.images?.length + 1
       }}', $${index}, true), `;
-      values.push(JSON.stringify(uploadImage));
+      values.push(JSON.stringify(image));
       index++;
     }
 
@@ -1156,8 +1139,6 @@ const removeEventImages = async (req, res, next) => {
         req
       );
     }
-
-    await deleteAllCloudinaryFiles(publicIds);
 
     await pool.query("COMMIT");
 

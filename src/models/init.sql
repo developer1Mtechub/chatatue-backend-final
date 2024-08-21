@@ -27,11 +27,27 @@ CREATE TABLE IF NOT EXISTS users (
     profile_showcase_photos JSONB DEFAULT '[]',
     lat NUMERIC,
     long NUMERIC,
-    is_public_view BOOLEAN DEFAULT FALSE,
     rating DECIMAL(3, 2) DEFAULT 3.00 CHECK (rating >= 1 AND rating <= 5),
     customer_id VARCHAR(255) UNIQUE,
     connected_account_id VARCHAR(255) UNIQUE,
     is_requirement_completed BOOLEAN DEFAULT FALSE,
+    total_followers INT DEFAULT 0,
+    total_following INT DEFAULT 0,
+    goals_visible BOOLEAN DEFAULT true,
+    interests_visible BOOLEAN DEFAULT true,
+    showcase_visible BOOLEAN DEFAULT true,
+    experience_level_visible BOOLEAN DEFAULT true,
+    social_preferences_visible BOOLEAN DEFAULT true,
+    social_media_links_visible BOOLEAN DEFAULT true,
+    running_times_visible BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS followers(
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    follower_id UUID REFERENCES users(id) ON DELETE CASCADE,  -- the user who is following 
+    followed_id UUID REFERENCES users(id) ON DELETE CASCADE, -- the user who is being followed
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

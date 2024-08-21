@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
+
 const {
   sendNotifications,
   getNotifications,
@@ -14,11 +14,11 @@ const router = Router();
 router
   .route("/send")
   .post(
-    isLoggedIn,
+    
     validateBody(notificationValidations.sendNotificationSchema),
     sendNotifications
   );
-router.route("/").get(isLoggedIn, getNotifications);
-router.route("/:id").delete(isLoggedIn, deleteNotification);
+router.route("/").get( getNotifications);
+router.route("/:id").delete( deleteNotification);
 
 module.exports = router;

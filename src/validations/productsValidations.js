@@ -6,6 +6,15 @@ const productsValidations = {
       "string.uuid": "Invalid club id format",
       "any.required": "Club id is required",
     }),
+    images: Joi.array().items(Joi.object()).required().messages({
+      "array.required": "Event images are required",
+      "array.items": "Each event image must be an object",
+    }),
+    userId: Joi.string().uuid().required().messages({
+      "string.uuid": "Invalid user id format",
+      "any.required": "User id is required",
+    }),
+
     title: Joi.string().required().messages({
       "any.required": "Title is required",
     }),

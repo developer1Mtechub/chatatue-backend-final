@@ -16,12 +16,12 @@ const {
   validateBody,
 } = require("../../middleware/validations/validationMiddleware");
 const userValidation = require("../../validations/userValidations");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
-const upload = require("../../middleware/multer");
-const uploadFields = upload.fields([
-  { name: "profile_image", maxCount: 1 },
-  { name: "profile_showcase_photos", maxCount: 10 },
-]);
+
+const {
+  followUser,
+  unfollowUser,
+  getFollowersList,
+} = require("../../controller/User/Followers/followerController");
 
 // router
 const router = express.Router();
@@ -34,17 +34,22 @@ router.route("/login").post(validateBody(userValidation.loginUser), loginUser);
 router.route("/verify-email").post(verifyEmail);
 router.route("/verify-otp").post(verifyOTP);
 router.route("/reset-password/:id").patch(resetPassword);
-router.route("/:id").get(isLoggedIn, getUserById);
-router.route("/").get(isLoggedIn, getUsers);
-router.route("/remove-user-images").delete(isLoggedIn, removeUserImages);
-router.route("/:id").delete(isLoggedIn, deleteUserAccount);
-router.route("/:id/update").put(isLoggedIn, uploadFields, updateUserAccount);
+router.route("/:id").get(getUserById);
+router.route("/").get(getUsers);
+router.route("/remove-user-images").delete(removeUserImages);
+router.route("/:id").delete(deleteUserAccount);
+router.route("/:id/update").put(updateUserAccount);
 router
   .route("/update-password")
-  .patch(
-    isLoggedIn,
-    validateBody(userValidation.updatePassword),
-    updatePassword
-  );
+  .patch(validateBody(userValidation.updatePassword), updatePassword);
+
+router
+  .route("/follow")
+  .post(validateBody(userValidation.followersSchema), followUser);
+router
+  .route("/unfollow")
+  .post(validateBody(userValidation.followersSchema), unfollowUser);
+
+router.route("/followers/list").get(getFollowersList);
 
 module.exports = router;

@@ -1,44 +1,21 @@
 const pool = require("../../../config/db");
 const logger = require("../../../config/logger");
-const {
-  uploadToCloudinary,
-  deleteCloudinaryFile,
-  deleteAllCloudinaryFiles,
-} = require("../../../utilities/cloudinary");
 const { pagination } = require("../../../utilities/pagination");
 const { responseSender } = require("../../../utilities/responseHandlers");
 
 const createPost = async (req, res, next) => {
-  const { club_id, title, description, tag } = req.body;
-  const { userId } = req.user;
+  const { club_id, title, description, tag, userId, images } = req.body;
 
   try {
     await pool.query("BEGIN");
 
-    let uploadedImages = [];
-
-    if (req?.files?.length === 0) {
-      return responseSender(res, 400, false, "Please upload atleast one image");
-    }
-
-    if (req.files) {
-      for (const file of req.files) {
-        const image = await uploadToCloudinary(file.path, "Posts");
-        uploadedImages.push(image);
-      }
-    }
-
     const { rows, rowCount } = await pool.query(
       `INSERT INTO club_posts (club_id, user_id, title, description, tag , images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [club_id, userId, title, description, tag, JSON.stringify(uploadedImages)]
+      [club_id, userId, title, description, tag, JSON.stringify(images)]
     );
 
     if (rowCount === 0) {
       await pool.query("ROLLBACK");
-
-      for (const image of uploadedImages) {
-        await deleteCloudinaryFile(image.public_id);
-      }
 
       return responseSender(res, 400, false, "Unexpected error occured");
     }
@@ -173,12 +150,6 @@ const deletePost = async (req, res, next) => {
       return responseSender(res, 404, false, "Post not found");
     }
 
-    if (rows[0]?.image?.length > 0) {
-      for (let image of rows[0].image) {
-        await deleteCloudinaryFile(image.public_id);
-      }
-    }
-
     await pool.query("COMMIT");
 
     return responseSender(res, 200, true, "Post Deleted", rows[0]);
@@ -190,7 +161,7 @@ const deletePost = async (req, res, next) => {
 
 const updatePost = async (req, res, next) => {
   const { id } = req.params;
-  const { club_id, user_id, title, description, tag } = req.body;
+  const { club_id, user_id, title, description, tag, image } = req.body;
 
   try {
     const fetchPosts = await pool.query(
@@ -235,20 +206,17 @@ const updatePost = async (req, res, next) => {
       values.push(tag);
     }
 
-    if (req.file) {
-      const uploadImage = await uploadToCloudinary(req.file.path, "Posts");
+    if (image) {
       query += `images = jsonb_set(images, '{${
         fetchPosts.rows[0].images.length + 1
       }}', $${index}, true), `;
-      values.push(JSON.stringify(uploadImage));
+      values.push(JSON.stringify(image));
       index++;
     }
 
     query = query.replace(/,\s*$/, "");
 
     query += ` WHERE id = $1 RETURNING *`;
-
-    console.log(query);
 
     const { rows, rowCount } = await pool.query(query, values);
 
@@ -294,8 +262,6 @@ const removePostImages = async (req, res, next) => {
         req
       );
     }
-
-    await deleteAllCloudinaryFiles(publicIds);
 
     await pool.query("COMMIT");
 

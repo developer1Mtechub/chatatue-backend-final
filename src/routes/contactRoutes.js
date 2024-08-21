@@ -1,5 +1,4 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
 const {
   createContactQuery,
   updateContactStatus,
@@ -15,13 +14,13 @@ const router = Router();
 router
   .route("/create")
   .post(
-    isLoggedIn,
+    
     validateBody(contactValidations.createContactSchema),
     createContactQuery
   );
 
-router.route("/:id/:status").patch(isLoggedIn, updateContactStatus);
-router.route("/").get(isLoggedIn, getAllContacts);
-router.route("/:id").delete(isLoggedIn, deleteContact);
+router.route("/:id/:status").patch( updateContactStatus);
+router.route("/").get( getAllContacts);
+router.route("/:id").delete( deleteContact);
 
 module.exports = router;

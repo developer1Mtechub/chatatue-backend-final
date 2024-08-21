@@ -125,6 +125,19 @@ const userValidation = {
       "string.empty": "Reason cannot be empty",
     }),
   }),
+
+  followersSchema: Joi.object({
+    follower_id: Joi.string().uuid().required().messages({
+      "string.empty": "Follower ID is required",
+      "string.pattern.base": "Invalid Follower ID format",
+      "string.uuid": "Invalid Follower ID format",
+    }),
+    followed_id: Joi.string().uuid().required().messages({
+      "string.empty": "Following ID is required",
+      "string.pattern.base": "Invalid Following ID format",
+      "string.uuid": "Invalid Following ID format",
+    }),
+  }),
 };
 
 module.exports = userValidation;

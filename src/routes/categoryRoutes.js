@@ -6,14 +6,14 @@ const {
   updateCategory,
   getCategory,
 } = require("../controller/Category/categoryController");
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
+
 
 // router
 const router = express.Router();
-router.route("/create").post(isLoggedIn, createCategory);
-router.route("/").get(isLoggedIn, getCategories);
-router.route("/:id").get(isLoggedIn, getCategory);
-router.route("/:id/update").patch(isLoggedIn, updateCategory);
+router.route("/create").post( createCategory);
+router.route("/").get( getCategories);
+router.route("/:id").get( getCategory);
+router.route("/:id/update").patch( updateCategory);
 router.route("/:id/delete").delete(deleteCategory);
 
 module.exports = router;

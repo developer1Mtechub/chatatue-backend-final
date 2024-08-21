@@ -1,6 +1,5 @@
 const express = require("express");
 
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
 const {
   createExperienceLevel,
   getExperienceLevels,
@@ -11,10 +10,10 @@ const {
 
 // router
 const router = express.Router();
-router.route("/create").post(isLoggedIn, createExperienceLevel);
-router.route("/").get(isLoggedIn, getExperienceLevels);
-router.route("/:id").get(isLoggedIn, getExperienceLevel);
-router.route("/:id/update").patch(isLoggedIn, updateExperienceLevel);
-router.route("/:id/delete").delete(isLoggedIn, deleteExperienceLevel);
+router.route("/create").post(createExperienceLevel);
+router.route("/").get(getExperienceLevels);
+router.route("/:id").get(getExperienceLevel);
+router.route("/:id/update").patch(updateExperienceLevel);
+router.route("/:id/delete").delete(deleteExperienceLevel);
 
 module.exports = router;

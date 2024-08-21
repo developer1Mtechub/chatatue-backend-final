@@ -1,5 +1,5 @@
 const express = require("express");
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
+
 const {
   createSocialPreference,
   getSocialPreferences,
@@ -10,10 +10,10 @@ const {
 
 // router
 const router = express.Router();
-router.route("/create").post(isLoggedIn, createSocialPreference);
-router.route("/").get(isLoggedIn, getSocialPreferences);
-router.route("/:id").get(isLoggedIn, getSocialPreference);
-router.route("/:id/update").patch(isLoggedIn, updateSocialPreference);
-router.route("/:id/delete").delete(isLoggedIn, deleteSocialPreference);
+router.route("/create").post(createSocialPreference);
+router.route("/").get(getSocialPreferences);
+router.route("/:id").get(getSocialPreference);
+router.route("/:id/update").patch(updateSocialPreference);
+router.route("/:id/delete").delete(deleteSocialPreference);
 
 module.exports = router;

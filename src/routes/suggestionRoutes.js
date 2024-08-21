@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
+
 const {
   createSuggestion,
   getSuggestions,
@@ -7,8 +7,8 @@ const {
 } = require("../controller/Suggestions/suggestionController");
 const router = Router();
 
-router.route("/create").post(isLoggedIn, createSuggestion);
-router.route("/").get(isLoggedIn, getSuggestions);
-router.route("/:id").delete(isLoggedIn, deleteSuggestion);
+router.route("/create").post(createSuggestion);
+router.route("/").get(getSuggestions);
+router.route("/:id").delete(deleteSuggestion);
 
 module.exports = router;

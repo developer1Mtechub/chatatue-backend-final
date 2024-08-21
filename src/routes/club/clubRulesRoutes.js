@@ -1,5 +1,5 @@
 const express = require("express");
-const { isLoggedIn } = require("../../middleware/auth/authMiddleware");
+
 const {
   createClubRule,
   getClubRules,
@@ -11,10 +11,10 @@ const {
 // router
 const router = express.Router();
 
-router.route("/create").post(isLoggedIn, createClubRule);
-router.route("/").get(isLoggedIn, getClubRules);
-router.route("/:id").get(isLoggedIn, getClubRule);
-router.route("/:id/update").patch(isLoggedIn, updateClubRule);
-router.route("/:id/delete").delete(isLoggedIn, deleteClubRule);
+router.route("/create").post( createClubRule);
+router.route("/").get( getClubRules);
+router.route("/:id").get( getClubRule);
+router.route("/:id/update").patch( updateClubRule);
+router.route("/:id/delete").delete( deleteClubRule);
 
 module.exports = router;

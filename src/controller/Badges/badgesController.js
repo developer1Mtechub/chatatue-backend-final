@@ -1,30 +1,18 @@
 const pool = require("../../config/db");
 const logger = require("../../config/logger");
-const {
-  uploadToCloudinary,
-  deleteCloudinaryFile,
-  updateCloudinaryFile,
-} = require("../../utilities/cloudinary");
+
 const { responseSender } = require("../../utilities/responseHandlers");
 
 const createBadge = async (req, res, next) => {
-  if (!req?.file) {
-    return responseSender(res, 400, false, "Please Select an image");
-  }
-
-  const { badge_type, amount } = req.body;
-  const file = req?.file;
+  const { badge_type, amount, badge_icon } = req.body;
 
   try {
-    const uplaodedImage = await uploadToCloudinary(file.path, "Badges");
-
     const { rows, rowCount } = await pool.query(
       `INSERT INTO badges (badge_icon , badge_type, amount) VALUES ($1, $2, $3) RETURNING *`,
-      [uplaodedImage, badge_type, amount]
+      [badge_icon, badge_type, amount]
     );
 
     if (rowCount === 0) {
-      await deleteCloudinaryFile(uplaodedImage.public_id);
       return responseSender(res, 400, false, "Failed to add badge");
     }
 
@@ -80,7 +68,7 @@ const getBadgeById = async (req, res, next) => {
 };
 
 const updateBadge = async (req, res, next) => {
-  const { badge_type, amount } = req.body;
+  const { badge_type, amount, badge_icon } = req.body;
   const { id } = req.params;
 
   try {
@@ -109,19 +97,16 @@ const updateBadge = async (req, res, next) => {
       index++;
     }
 
-    if (req.file) {
-      const updatedFile = await updateCloudinaryFile(
-        req.file.path,
-        badges[0].badge_icon.public_id
-      );
-
+    if (badge_icon) {
       query += `badge_icon = $${index}, `;
-      values.push(updatedFile);
+      values.push(badge_icon);
       index++;
     }
 
     query = query.replace(/,\s*$/, "");
     query += ` WHERE id = $1 RETURNING *`;
+
+    console.log(query);
 
     const { rows, rowCount } = await pool.query(query, values);
 
@@ -154,9 +139,6 @@ const deleteBadge = async (req, res, next) => {
     if (rowCount === 0) {
       return responseSender(res, 404, false, "Badge not found");
     }
-
-    // Delete the badge icon from Cloudinary
-    await deleteCloudinaryFile(rows[0].badge_icon.public_id);
 
     return responseSender(res, 200, true, "Badge deleted successfully", {
       id: rows[0].id,

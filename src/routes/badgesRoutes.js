@@ -1,5 +1,4 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
 const {
   createBadge,
   getBadges,
@@ -7,7 +6,7 @@ const {
   updateBadge,
   deleteBadge,
 } = require("../controller/Badges/badgesController");
-const upload = require("../middleware/multer");
+
 const {
   validateBody,
 } = require("../middleware/validations/validationMiddleware");
@@ -17,16 +16,11 @@ const router = Router();
 
 router
   .route("/create")
-  .post(
-    isLoggedIn,
-    upload.single("icon"),
-    validateBody(eventValidation.badgeShema),
-    createBadge
-  );
+  .post(validateBody(eventValidation.badgeShema), createBadge);
 
-router.route("/").get(isLoggedIn, getBadges);
-router.route("/:id").get(isLoggedIn, getBadgeById);
-router.route("/:id").patch(isLoggedIn, upload.single("icon"), updateBadge);
-router.route("/:id").delete(isLoggedIn, deleteBadge);
+router.route("/").get(getBadges);
+router.route("/:id").get(getBadgeById);
+router.route("/:id").patch(updateBadge);
+router.route("/:id").delete(deleteBadge);
 
 module.exports = router;

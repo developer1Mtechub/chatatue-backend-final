@@ -1,5 +1,4 @@
 const { Router } = require("express");
-const { isLoggedIn } = require("../middleware/auth/authMiddleware");
 const {
   createFaq,
   getAllFaqs,
@@ -8,9 +7,9 @@ const {
 } = require("../controller/FAQ/faqController");
 const router = Router();
 
-router.route("/create").post(isLoggedIn, createFaq);
-router.route("/").get(isLoggedIn, getAllFaqs);
-router.route("/:id").patch(isLoggedIn, updateFaq);
-router.route("/:id").delete(isLoggedIn, deleteFaq);
+router.route("/create").post( createFaq);
+router.route("/").get( getAllFaqs);
+router.route("/:id").patch( updateFaq);
+router.route("/:id").delete( deleteFaq);
 
 module.exports = router;
