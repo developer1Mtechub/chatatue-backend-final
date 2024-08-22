@@ -145,26 +145,45 @@ const eventValidation = {
   }),
 
   badgeShema: Joi.object({
-    badge_type: Joi.string()
-      .valid("GOLD", "SILVER", "PLATINUM", "PRIZE")
-      .required()
-      .messages({
-        "string.base": "Badge type must be a string",
-        "string.enum":
-          "Badge type must be one of 'GOLD', 'SILVER', 'PLATINUM', 'PRIZE'",
-        "any.required": "Badge type is required",
-      }),
+    badge_type: Joi.string().valid("DIGITAL", "PRIZE").required().messages({
+      "string.base": "Badge type must be a string",
+      "string.enum": "Badge type must be one of 'DIGITAL', 'PRIZE'",
+      "any.required": "Badge type is required",
+    }),
     badge_icon: Joi.object().required().messages({
       "object.base": "Badge icon must be an object",
       "any.required": "Badge icon is required",
     }),
-    amount: Joi.when("badge_type", {
-      is: "PRIZE",
-      then: Joi.number().required().messages({
-        "number.base": "Amount must be a number",
-        "any.required": "Amount is required when badge type is 'PRIZE'",
-      }),
-      otherwise: Joi.number().optional().allow(null),
+    badge_title: Joi.string().required().messages({
+      "string.base": "Badge title must be a string",
+      "any.required": "Badge title is required",
+    }),
+  }),
+
+  achievementSchema: Joi.object({
+    event_id: Joi.string().uuid().required().messages({
+      "string.base": "Event ID must be a string",
+      "string.guid": "Event ID must be a valid UUID",
+      "any.required": "Event ID is required",
+    }),
+    user_id: Joi.string().uuid().required().messages({
+      "string.base": "User ID must be a string",
+      "string.guid": "User ID must be a valid UUID",
+      "any.required": "User ID is required",
+    }),
+    pace: Joi.number().min(1).required().messages({
+      "number.base": "Pace must be a number",
+      "number.min": "Pace must be at least 1",
+      "any.required": "Pace is required",
+    }),
+
+    duration: Joi.string().required().messages({
+      "string.base": "Duration must be a string",
+      "any.required": "Duration is required",
+    }),
+    calories_burnt: Joi.number().required().messages({
+      "number.base": "Calories burnt must be a number",
+      "any.required": "Calories burnt is required",
     }),
   }),
 };

@@ -4,12 +4,26 @@ const logger = require("../../config/logger");
 const { responseSender } = require("../../utilities/responseHandlers");
 
 const createBadge = async (req, res, next) => {
-  const { badge_type, amount, badge_icon } = req.body;
+  const { badge_type, badge_title, badge_icon } = req.body;
 
   try {
+    const { rowCount: checkBadge } = await pool.query(
+      `SELECT * FROM badges WHERE LOWER(badge_title) = LOWER($1) LIMIT 1`,
+      [badge_title]
+    );
+
+    if (checkBadge > 0) {
+      return responseSender(
+        res,
+        400,
+        false,
+        "Badge with the same title already exists"
+      );
+    }
+
     const { rows, rowCount } = await pool.query(
-      `INSERT INTO badges (badge_icon , badge_type, amount) VALUES ($1, $2, $3) RETURNING *`,
-      [badge_icon, badge_type, amount]
+      `INSERT INTO badges (badge_icon , badge_type, badge_title) VALUES ($1, $2, $3) RETURNING *`,
+      [badge_icon, badge_type, badge_title]
     );
 
     if (rowCount === 0) {
@@ -68,11 +82,11 @@ const getBadgeById = async (req, res, next) => {
 };
 
 const updateBadge = async (req, res, next) => {
-  const { badge_type, amount, badge_icon } = req.body;
+  const { badge_type, badge_title, badge_icon } = req.body;
   const { id } = req.params;
 
   try {
-    const { rows: badges, rowCount: badgeCount } = await pool.query(
+    const { rowCount: badgeCount } = await pool.query(
       `SELECT * FROM badges WHERE id = $1`,
       [id]
     );
@@ -91,9 +105,9 @@ const updateBadge = async (req, res, next) => {
       index++;
     }
 
-    if (amount) {
-      query += `amount = $${index}, `;
-      values.push(amount);
+    if (badge_title) {
+      query += `badge_title = $${index}, `;
+      values.push(badge_title);
       index++;
     }
 
@@ -105,8 +119,6 @@ const updateBadge = async (req, res, next) => {
 
     query = query.replace(/,\s*$/, "");
     query += ` WHERE id = $1 RETURNING *`;
-
-    console.log(query);
 
     const { rows, rowCount } = await pool.query(query, values);
 

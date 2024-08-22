@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     gender VARCHAR(255),
     bio VARCHAR(255),
     email VARCHAR(255) NOT NULL,
-    phone_number NUMERIC,
+    phone_no NUMERIC,
     password TEXT,
     otp TEXT,
     otp_expiry TIMESTAMP,
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS club(
 CREATE TABLE IF NOT EXISTS routes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    club_id UUID REFERENCES club(id) ON DELETE CASCADE,
+    club_id UUID REFERENCES club(id) ON DELETE SET NULL,
     start_loc_name VARCHAR NOT NULL,
     end_loc_name VARCHAR NOT NULL,
     start_lat NUMERIC NOT NULL,
@@ -243,7 +243,7 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE TABLE IF NOT EXISTS event_invitations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_id UUID REFERENCES events(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     email VARCHAR(255),
     status VARCHAR(50) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED')),
     created_at TIMESTAMP DEFAULT NOW(),
@@ -253,7 +253,7 @@ CREATE TABLE IF NOT EXISTS event_invitations (
 CREATE TABLE IF NOT EXISTS event_members(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_id UUID REFERENCES events(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES users(id),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -320,9 +320,9 @@ CREATE TABLE IF NOT EXISTS upcoming_balances (
 
 CREATE TABLE IF NOT EXISTS badges (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    badge_title VARCHAR,
     badge_icon JSONB,
-    badge_type VARCHAR(255) NOT NULL UNIQUE CHECK (badge_type IN ('SILVER', 'GOLD', 'PLATINUM' , 'PRIZE')),
-    amount NUMERIC,
+    badge_type VARCHAR(255) NOT NULL UNIQUE CHECK (badge_type IN ('DIGITAL' , 'PRIZE')),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -343,7 +343,7 @@ CREATE TABLE IF NOT EXISTS products (
 
 CREATE TABLE IF NOT EXISTS discounts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  product_id UUID NOT NULL REFERENCES products(id),
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   discount_code VARCHAR(50) NOT NULL,
   discount_value DECIMAL(10, 2) NOT NULL,
   discount_type VARCHAR(50) NOT NULL CHECK (discount_type IN ('PERCENTAGE' , 'AMOUNT')), -- 'percentage' or 'amount'
@@ -353,13 +353,13 @@ CREATE TABLE IF NOT EXISTS discounts (
 
 CREATE TABLE IF NOT EXISTS purchase_items(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    buyer_id UUID NOT NULL REFERENCES users(id),
-    seller_id UUID NOT NULL REFERENCES users(id),
-    product_id UUID NOT NULL REFERENCES products(id),
+    buyer_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    seller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE SET NULL,
     quantity INTEGER NOT NULL,
     price DECIMAL(100, 2) NOT NULL,
     address VARCHAR NOT NULL,
-    status VARCHAR DEFAULT 'PENDING' CHECK (status IN ('PENDING' , 'CONFIRMED' , 'DELIEVERED')),
+    status VARCHAR DEFAULT 'PENDING' CHECK (status IN ('PENDING' , 'CONFIRMED' , 'DELIVERED')),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -374,9 +374,9 @@ CREATE TABLE IF NOT EXISTS policies(
 
 CREATE TABLE IF NOT EXISTS reviews(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id),
-    reviewer_id UUID REFERENCES users(id),
-    event_id UUID REFERENCES events(id),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    reviewer_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    event_id UUID REFERENCES events(id) ON DELETE SET NULL,
     type VARCHAR NOT NULL CHECK (type IN ('EVENT' , 'PROFILE')),
     rating DECIMAL(3, 2) CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
@@ -388,15 +388,15 @@ CREATE TABLE IF NOT EXISTS reviews(
 CREATE TABLE IF NOT EXISTS rating_suggestions(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title TEXT NOT NULL,
-    description TEXT NOT  NULL,
+    description TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
     );
 
 CREATE TABLE IF NOT EXISTS notifications(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    sender_id UUID REFERENCES users(id),
-    receiver_id UUID REFERENCES users(id),
+    sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    receiver_id UUID REFERENCES users(id) ON DELETE SET NULL,
     title VARCHAR NOT NULL,
     message TEXT NOT NULL,
     type VARCHAR NOT NULL,
@@ -424,8 +424,8 @@ CREATE TABLE IF NOT EXISTS faq (
 
 CREATE TABLE IF NOT EXISTS reports (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    reporter_id UUID REFERENCES users(id) NOT NULL,
-    reported_id UUID REFERENCES users(id) NOT NULL,
+    reporter_id UUID REFERENCES users(id)  ON DELETE SET NULL,
+    reported_id UUID REFERENCES users(id)  ON DELETE SET NULL,
     reason TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -435,8 +435,8 @@ CREATE TABLE IF NOT EXISTS groups(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     club_id UUID REFERENCES club(id) ON DELETE CASCADE,
     event_id UUID REFERENCES events(id) ON DELETE CASCADE,
-    sender_id UUID REFERENCES users(id),
-    recipient_id UUID REFERENCES users(id),
+    sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    recipient_id UUID REFERENCES users(id) ON DELETE SET NULL,
     type VARCHAR NOT NULL CHECK (type IN ('PRIVATE', 'CLUB', 'EVENT')),
     name VARCHAR(255) NOT NULL,
     image TEXT,
@@ -448,8 +448,8 @@ CREATE TABLE IF NOT EXISTS groups(
 
 CREATE TABLE IF NOT EXISTS chat_messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    sender_id UUID REFERENCES users(id),
-    recipient_id UUID REFERENCES users(id), -- Only for private messages
+    sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    recipient_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Only for private messages
     group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
     message TEXT NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
@@ -462,10 +462,22 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 CREATE TABLE IF NOT EXISTS group_members (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id),
-    group_id UUID NOT NULL REFERENCES groups(id),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
     role VARCHAR DEFAULT 'MEMBER' CHECK (role IN ('MEMBER', 'ADMIN', 'CREATOR')),
     joined_at TIMESTAMP DEFAULT NOW()
 );
 
+
+CREATE TABLE IF NOT EXISTS achievements(
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    badge_id UUID REFERENCES badges(id) ON DELETE SET NULL,
+    event_id UUID REFERENCES events(id) ON DELETE SET NULL,
+    pace DECIMAL NOT NULL,
+    duration INTERVAL NOT NULL,
+    calories_burnt DECIMAL NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
 
