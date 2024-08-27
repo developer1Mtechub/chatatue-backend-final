@@ -304,6 +304,32 @@ const removeClubMember = async (req, res, next) => {
   }
 };
 
+const checkClubMembership = async (req, res, next) => {
+  const { club_id, user_id } = req.params;
+
+  try {
+    const { rows, rowCount } = await pool.query(
+      `SELECT member_role FROM club_members WHERE club_id = $1 AND user_id = $2`,
+      [club_id, user_id]
+    );
+
+    if (rowCount > 0) {
+      return responseSender(
+        res,
+        200,
+        true,
+        "User is a member of this club",
+        rows[0]
+      );
+    }
+
+    responseSender(res, 200, false, "User is not a member of this club");
+  } catch (error) {
+    logger.error(error.stack);
+    next(error);
+  }
+};
+
 module.exports = {
   sendMembershipRequest,
   updateMembership,
@@ -312,4 +338,5 @@ module.exports = {
   getJoinClubs,
   getMembershipRequests,
   removeClubMember,
+  checkClubMembership,
 };

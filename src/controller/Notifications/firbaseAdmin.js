@@ -21,6 +21,7 @@ module.exports.sendPushNotif = async (token, title, body) => {
     logger.info(`Successfully sent message: ${response}`);
   } catch (error) {
     logger.error(error.stack);
+    console.log(error);
     throw error;
   }
 };

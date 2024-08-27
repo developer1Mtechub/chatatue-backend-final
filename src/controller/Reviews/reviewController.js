@@ -3,6 +3,10 @@ const logger = require("../../config/logger");
 const { suggestionSender } = require("../../services/suggestionSender");
 const { pagination } = require("../../utilities/pagination");
 const { responseSender } = require("../../utilities/responseHandlers");
+const { sendPushNotif } = require("../Notifications/firbaseAdmin");
+const {
+  sendNotifications,
+} = require("../Notifications/notificationController");
 
 const createReview = async (req, res, next) => {
   const { user_id, reviewer_id, event_id, type, rating, comment, is_anonymus } =
@@ -56,9 +60,13 @@ const createReview = async (req, res, next) => {
       if (parseFloat(userReview.rating) < 2.5) {
         const tips = await pool.query(`SELECT * FROM rating_suggestions`);
 
-        await suggestionSender({
+        await sendNotifications({
+          title: "Profile Rating Degradation",
+          message: "Test message",
+          sender_id: reviewer_id,
+          receiver_id: user_id,
+          type,
           email: userReview.email,
-          subject: "Rating Degradation",
           data: tips.rows[0],
         });
       }

@@ -32,21 +32,6 @@ const createEvent = async (req, res, next) => {
   try {
     await pool.query("BEGIN");
 
-    const clubExists = await pool.query(
-      `SELECT id FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1`,
-      [name]
-    );
-
-    if (clubExists.rowCount > 0) {
-      await pool.query("ROLLBACK");
-      return responseSender(
-        res,
-        400,
-        false,
-        "Event with the same name already exists"
-      );
-    }
-
     const { rows, rowCount } = await pool.query(
       `INSERT INTO events (
         club_id,
@@ -237,8 +222,9 @@ const sendEventInvite = async (req, res, next) => {
     await eventInviteSender({
       email,
       subject: "Event Invitaion",
-      link: `${process.env.FRONT_URL}?invite_id=${rows[0].id}`,
+      link: `${process.env.FRONT_URL}/events/invite-page?invite_id=${rows[0].id}`,
     });
+
 
     await pool.query("COMMIT");
 
@@ -566,21 +552,20 @@ const getEvents = async (req, res, next) => {
   try {
     let whereClauses = [];
     let queryParams = [];
+    let user;
 
-    if (!userId) {
-      return responseSender(res, 400, false, "User ID is required");
+    if (userId) {
+      const userResult = await pool.query(
+        `SELECT * FROM users WHERE id = $1 LIMIT 1`,
+        [userId]
+      );
+
+      if (userResult.rowCount === 0) {
+        return responseSender(res, 401, false, "Unauthorized user");
+      }
+
+      user = userResult.rows[0];
     }
-
-    const userResult = await pool.query(
-      `SELECT * FROM users WHERE id = $1 LIMIT 1`,
-      [userId]
-    );
-
-    if (userResult.rowCount === 0) {
-      return responseSender(res, 401, false, "Unauthorized user");
-    }
-
-    const user = userResult.rows[0];
 
     if (search) {
       whereClauses.push(
@@ -617,7 +602,7 @@ const getEvents = async (req, res, next) => {
       queryParams.push(category_id);
     }
 
-    if (!category_id && !search) {
+    if (userId) {
       const { rows } = await pool.query(
         `SELECT sc.* FROM sub_category sc LEFT JOIN users u ON sc.id = ANY(u.interest_ids) WHERE u.id = $1`,
         [userId]
@@ -1156,6 +1141,56 @@ const removeEventImages = async (req, res, next) => {
   }
 };
 
+const checkEventMembership = async (req, res, next) => {
+  const { event_id, user_id } = req.params;
+
+  try {
+    const { rows, rowCount } = await pool.query(
+      `SELECT * FROM event_members WHERE event_id = $1 AND user_id = $2`,
+      [event_id, user_id]
+    );
+
+    if (rowCount > 0) {
+      return responseSender(
+        res,
+        200,
+        true,
+        "User is a member of this event",
+        rows[0]
+      );
+    }
+
+    return responseSender(
+      res,
+      200,
+      false,
+      "User is not a member of this event"
+    );
+  } catch (error) {
+    logger.error(error.stack);
+    next(error);
+  }
+};
+
+const invitessPage = async (req, res, next) => {
+  const { invite_id } = req.query;
+  try {
+    const { rows, rowCount } = await pool.query(
+      `SELECT * FROM event_invitations WHERE id = $1`,
+      [invite_id]
+    );
+
+    if (rowCount === 0) {
+      return responseSender(res, 404, false, "Invite not found");
+    }
+
+    res.render("invitation", { invites: rows[0] });
+  } catch (error) {
+    logger.error(error.stack);
+    next(error);
+  }
+};
+
 module.exports = {
   createEvent,
   joinEvent,
@@ -1170,4 +1205,6 @@ module.exports = {
   updateEvent,
   removeEventImages,
   deleteEvent,
+  checkEventMembership,
+  invitessPage,
 };

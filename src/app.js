@@ -38,7 +38,11 @@ app.use(
 );
 
 // static path for files and folders
-app.use("/src/uploads", express.static(path.join(__dirname, `uploads`)));
+app.use("/src/public", express.static(path.join(__dirname, `public`)));
+
+// Set view engine
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "public", "views"));
 
 // Routes
 app.use("/api/v1", router);

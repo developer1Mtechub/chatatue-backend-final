@@ -32,6 +32,7 @@ const scheduleRoutes = require("./club/scheduleRoutes");
 const reportRoutes = require("./users/reportRoutes");
 const chatRoutes = require("./chat/chatRoutes");
 const achievementRoutes = require("./achievements/achievementRoutes");
+const contactSuggestionRoutes = require("./users/contactSuggestionRoutes");
 
 // use routes
 router.use("/users", userRoutes);
@@ -97,5 +98,7 @@ router.use("/reports", reportRoutes);
 router.use("/chats", chatRoutes);
 
 router.use("/achievements", achievementRoutes);
+
+router.use("/contact-suggestions", contactSuggestionRoutes);
 
 module.exports = router;

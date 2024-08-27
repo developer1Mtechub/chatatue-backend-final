@@ -481,3 +481,11 @@ CREATE TABLE IF NOT EXISTS achievements(
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+
+CREATE TABLE IF NOT EXISTS contact_suggestions(
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    contact_list NUMERIC [],
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);

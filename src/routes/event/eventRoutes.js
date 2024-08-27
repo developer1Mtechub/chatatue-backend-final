@@ -18,6 +18,8 @@ const {
   removeEventImages,
   deleteEvent,
   getJoinedEvents,
+  checkEventMembership,
+  invitessPage,
 } = require("../../controller/Events/eventsController");
 const { checkRole } = require("../../middleware/auth/checkRole");
 
@@ -46,5 +48,7 @@ router.route("/:id").get(getEvent);
 router.route("/:id").put(updateEvent);
 router.route("/remove-images").delete(removeEventImages);
 router.route("/:id").delete(deleteEvent);
+router.route("/check/:event_id/:user_id/membership").get(checkEventMembership);
+router.route("/invite/page").get(invitessPage);
 
 module.exports = router;
