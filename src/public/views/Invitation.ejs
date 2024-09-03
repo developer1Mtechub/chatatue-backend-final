@@ -3,10 +3,135 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Chatatue Event Invite</title>
+    <style>
+      /* Global Styles */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        color: #333;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      h1 {
+        color: #007bff;
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+
+      .details {
+        font-size: 1.2em;
+        margin-bottom: 30px;
+        text-align: left;
+      }
+
+      .details p {
+        margin: 8px 0;
+      }
+
+      .button-group {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #fff;
+        background-color: #007bff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        text-decoration: none;
+      }
+
+      .btn:hover {
+        background-color: #0056b3;
+      }
+
+      .btn.not-coming {
+        background-color: #dc3545;
+      }
+
+      .btn.not-coming:hover {
+        background-color: #c82333;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 1.5em;
+        }
+
+        .details {
+          font-size: 1em;
+        }
+
+        .btn {
+          padding: 8px 15px;
+          font-size: 1em;
+        }
+
+        .button-group {
+          flex-direction: column;
+          gap: 15px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <h1>hello from invitees page</h1>
-    <p><% invites %></p>
+    <div class="container">
+      <h1>Event Invitation</h1>
+
+      <div class="details">
+        <p><strong>Event Name:</strong> <%= invites.event.detail.name %></p>
+        <p>
+          <strong>Description:</strong> <%= invites.event.detail.description %>
+        </p>
+        <p>
+          <strong>Event Type:</strong> <%= invites.event.detail.event_type %>
+        </p>
+        <p>
+          <strong>Public / Private:</strong> <%= invites.event.detail.is_public
+          ? "Public" : "Private" %>
+        </p>
+        <p>
+          <strong>Start Date:</strong> <%= new Date(invites.event.detail.
+          start_date).toLocaleDateString() %>
+        </p>
+        <p>
+          <strong>Start Time:</strong> <%= new Date(invites.event.detail.
+          start_time).toLocaleTimeString() %>
+        </p>
+
+        <p>
+          <strong>End Date:</strong> <%= new Date(invites.event.detail.
+          end_date).toLocaleDateString() %>
+        </p>
+
+        <p><strong>Location:</strong> <%= invites.event.detail. location %></p>
+        <p><strong>Status:</strong> <%= invites.status %></p>
+      </div>
+
+      <div class="button-group invite" data-id="<%= invites.id %>">
+        <button class="btn coming coming-btn">Coming</button>
+        <button class="btn not-coming not-coming-btn">Not Coming</button>
+      </div>
+    </div>
+    <script src="http://localhost:9000/src/public/js/script.js"></script>
   </body>
 </html>

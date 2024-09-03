@@ -254,6 +254,7 @@ CREATE TABLE IF NOT EXISTS event_members(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     event_id UUID REFERENCES events(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    member_role VARCHAR DEFAULT 'MEMBER' CHECK (member_role IN ('CREATOR' , 'MEMBER')),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -322,7 +323,7 @@ CREATE TABLE IF NOT EXISTS badges (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     badge_title VARCHAR,
     badge_icon JSONB,
-    badge_type VARCHAR(255) NOT NULL UNIQUE CHECK (badge_type IN ('DIGITAL' , 'PRIZE')),
+    badge_type VARCHAR(255) NOT NULL CHECK (badge_type IN ('DIGITAL' , 'PRIZE')),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

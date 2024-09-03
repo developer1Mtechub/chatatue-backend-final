@@ -85,6 +85,12 @@ const createEvent = async (req, res, next) => {
       return responseSender(res, 400, false, "Failed to create event");
     }
 
+    // Add user to event members as creator
+    await pool.query(
+      `INSERT INTO event_members (event_id, user_id, member_role) VALUES ($1, $2, $3)`,
+      [rows[0].id, userId, "CREATOR"]
+    );
+
     // CREATE GROUP FOR EVENT
     const {
       rows: [group],
@@ -185,33 +191,60 @@ const sendEventInvite = async (req, res, next) => {
   try {
     await pool.query("BEGIN");
 
-    // Check if user is already invited to the event
-    const { rows: event } = await pool.query(
-      `SELECT * FROM event_invitations WHERE event_id = $1 AND user_id = $2`,
-      [event_id, user_id]
-    );
+    let inviteeId = user_id;
 
-    if (event[0]?.status === "PENDING") {
-      return responseSender(
-        res,
-        400,
-        false,
-        "User is already invited to this event"
-      );
+    if (!inviteeId) {
+      // Check if a user exists with the provided email
+      const {
+        rows: [existingUser],
+        rowCount,
+      } = await pool.query(`SELECT id FROM users WHERE email = $1 LIMIT 1`, [
+        email,
+      ]);
+
+      if (rowCount > 0) {
+        inviteeId = existingUser.id;
+      } else {
+        // Create a placeholder user entry in the database
+        const {
+          rows: [newUser],
+        } = await pool.query(
+          `INSERT INTO users (email , user_role ) VALUES ($1 , $2) RETURNING id`,
+          [email, "GUEST"]
+        );
+        inviteeId = newUser.id;
+      }
     }
 
-    if (event[0]?.status === "ACCEPTED") {
-      return responseSender(
-        res,
-        400,
-        false,
-        "User has already accepted the invite for this event"
-      );
+    // Check if user is already invited to the event
+    const { rows: event, rowCount: eventCount } = await pool.query(
+      `SELECT * FROM event_invitations WHERE event_id = $1 AND user_id = $2`,
+      [event_id, inviteeId]
+    );
+
+    if (eventCount > 0) {
+      if (event[0]?.status === "PENDING") {
+        return responseSender(
+          res,
+          400,
+          false,
+          "User is already invited to this event"
+        );
+      }
+
+      if (event[0]?.status === "ACCEPTED") {
+        return responseSender(
+          res,
+          400,
+          false,
+          "User has already accepted the invite for this event"
+        );
+      }
     }
 
     const { rows, rowCount } = await pool.query(
       `INSERT INTO event_invitations (event_id, user_id, email) VALUES ($1, $2, $3) RETURNING *`,
-      [event_id, user_id, email]
+      [event_id, inviteeId, email]
     );
 
     if (rowCount === 0) {
@@ -222,9 +255,8 @@ const sendEventInvite = async (req, res, next) => {
     await eventInviteSender({
       email,
       subject: "Event Invitaion",
-      link: `${process.env.FRONT_URL}/events/invite-page?invite_id=${rows[0].id}`,
+      link: `${process.env.BASE_URL}/api/v1/events/invite/page?invite_id=${rows[0].id}`,
     });
-
 
     await pool.query("COMMIT");
 
@@ -313,6 +345,7 @@ const getEventMembers = async (req, res, next) => {
           'email', u.email,
           'rating' , u.rating
         ) AS member_details
+        
       FROM event_members em
       LEFT JOIN users u ON em.user_id = u.id
       ${whereClauseString}
@@ -1176,13 +1209,19 @@ const invitessPage = async (req, res, next) => {
   const { invite_id } = req.query;
   try {
     const { rows, rowCount } = await pool.query(
-      `SELECT * FROM event_invitations WHERE id = $1`,
+      `SELECT ei.* , 
+      json_build_object('detail', e.*) AS event
+      FROM event_invitations ei
+      JOIN events e ON ei.event_id = e.id
+      WHERE ei.id = $1`,
       [invite_id]
     );
 
     if (rowCount === 0) {
       return responseSender(res, 404, false, "Invite not found");
     }
+
+    console.log(rows[0]);
 
     res.render("invitation", { invites: rows[0] });
   } catch (error) {

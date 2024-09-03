@@ -76,6 +76,57 @@ const createUser = async (req, res, next) => {
   } = req.body;
 
   try {
+    const {
+      rows: [guestUser],
+      rowCount: guestCount,
+    } = await pool.query(
+      `SELECT * FROM users WHERE email = $1 AND user_role = $2`,
+      [email, "GUEST"]
+    );
+
+    if (guestCount > 0) {
+      const hashedPassword = await generatePasswordHash(password);
+
+      const { rows, rowCount } = await pool.query(
+        `UPDATE users SET password = $1 , signup_type = $2 , device_id = $3 , google_access_token = $4 , apple_access_token = $5 , user_role = $6 WHERE id =  $7 RETURNING *`,
+        [
+          hashedPassword,
+          signup_type,
+          device_id,
+          google_accessToken,
+          apple_accessToken,
+          "USER",
+          guestUser.id,
+        ]
+      );
+
+      if (rowCount === 0) {
+        await pool.query("ROLLBACK");
+        return responseSender(
+          res,
+          400,
+          false,
+          "Failed to register your account."
+        );
+      }
+
+      const user = rows[0];
+
+      const token = await generateToken(
+        {
+          userId: user.id,
+          userEmail: user.email,
+        },
+        process.env.JWT_SECRET
+      );
+
+      await pool.query("COMMIT");
+      return responseSender(res, 200, true, "Signup Success", {
+        ...user,
+        authToken: token,
+      });
+    }
+
     const { rowCount } = await pool.query(
       `SELECT * FROM users WHERE email = $1`,
       [email]
