@@ -427,6 +427,60 @@ const loginUser = async (req, res, next) => {
   }
 };
 
+// login admin
+const loginAdmin = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return responseSender(res, 400, false, "Email and Password are required.");
+  }
+
+  try {
+    // check admin existence
+    const { rowCount, rows } = await pool.query(
+      `SELECT * FROM USERS WHERE email = $1 AND user_role = $2 LIMIT 1`,
+      [email, "ADMIN"]
+    );
+
+    if (rowCount === 0) {
+      return responseSender(
+        res,
+        404,
+        false,
+        "Invalid Credentials. Please try again."
+      );
+    }
+
+    // Compare hashed password
+    const passwordMatch = await comparePassword(password, rows[0].password);
+    if (!passwordMatch) {
+      return responseSender(
+        res,
+        400,
+        false,
+        "Invalid Credentials. Please try again."
+      );
+    }
+
+    // Generating token
+    const token = await generateToken(
+      {
+        userId: rows[0].id,
+        userEmail: rows[0].email,
+      },
+      process.env.JWT_SECRET
+    );
+
+    return responseSender(res, 200, true, "Login Success.", {
+      user: rows[0],
+      authToken: token,
+    });
+  } catch (error) {
+    logger.error(error.stack);
+    next(error);
+  }
+};
+
 // verify email
 const verifyEmail = async (req, res, next) => {
   const { email } = req.body;
@@ -1028,4 +1082,5 @@ module.exports = {
   updateUserAccount,
   removeUserImages,
   updatePassword,
+  loginAdmin,
 };

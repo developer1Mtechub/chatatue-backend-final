@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS club(
     images JSONB NOT NULL CHECK (jsonb_array_length(images) BETWEEN 1 AND 3),
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    is_paid BOOLEAN DEFAULT FALSE,
+    is_paid BOOLEAN DEFAULT false,
     fee NUMERIC,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     category_ids UUID[] DEFAULT NULL,
@@ -452,13 +452,15 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
     recipient_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Only for private messages
     group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
-    message TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
+    message TEXT,
+    attachment JSONB,
     message_time TIME NOT NULL,
+    read_by UUID[] DEFAULT '{}',
     deleted_by UUID[] DEFAULT '{}',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
 
 
 CREATE TABLE IF NOT EXISTS group_members (

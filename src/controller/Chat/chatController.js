@@ -3,15 +3,28 @@ const logger = require("../../config/logger");
 const pool = require("../../config/db");
 const { responseSender } = require("../../utilities/responseHandlers");
 const { pagination } = require("../../utilities/pagination");
-const { joinChatSchema } = require("../../validations/chatValidations");
+
+//** Mark messages as read */
+
+const markMessagesAsRead = async (roomId, user_id) => {
+  try {
+    const updateQuery = `
+      UPDATE chat_messages
+      SET read_by = array_append(read_by, $2)
+      WHERE group_id = $1
+      AND NOT ($2 = ANY(read_by))
+    `;
+    await pool.query(updateQuery, [roomId, user_id]);
+  } catch (error) {
+    logger.error(error.stack);
+  }
+};
 
 //**  Get Room messages */
 const getMessagesByRoom = async (roomId, user_id) => {
   try {
     // mark all messages as read
-    const updateQuery =
-      "UPDATE chat_messages SET is_read = true WHERE group_id = $1 AND is_read = false";
-    await pool.query(updateQuery, [roomId]);
+    await markMessagesAsRead(roomId, user_id);
 
     // Get Group messages
     const query = `
@@ -25,7 +38,6 @@ const getMessagesByRoom = async (roomId, user_id) => {
        'profile_image', s.profile_image) AS sender,
        
        json_build_object(
-       
         'id', r.id,
         'username', r.username,
         'email', r.email,
@@ -57,14 +69,22 @@ const saveMessage = async (
   recipient_id,
   group_id,
   message,
+  attachment,
   message_time
 ) => {
   try {
     await pool.query(
       `INSERT INTO chat_messages (
-      sender_id, recipient_id, group_id, message, message_time
-    ) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [sender_id, recipient_id, group_id, message, message_time]
+      sender_id, recipient_id, group_id, message, message_time , attachment
+    ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [
+        sender_id,
+        recipient_id,
+        group_id,
+        message,
+        message_time,
+        JSON.stringify(attachment),
+      ]
     );
   } catch (error) {
     logger.error(error.stack);
@@ -72,7 +92,6 @@ const saveMessage = async (
 };
 
 //** Active Group For one to one chat */
-
 const updateGroup = async (group_id) => {
   try {
     const resetQuery = `
@@ -133,6 +152,9 @@ const getChattingGroups = async (req, res, next) => {
 
     const query = `
        SELECT g.*,
+       cm.message AS last_message,
+       cm.message_time,
+
        
         json_build_object(
       
@@ -146,9 +168,14 @@ const getChattingGroups = async (req, res, next) => {
         'id', r.id,
         'username', r.username,
         'email', r.email,
-        'profile_image', r.profile_image) AS receiver
+        'profile_image', r.profile_image) AS receiver , 
+
+        (SELECT COUNT(*)
+         FROM chat_messages cm 
+         WHERE cm.group_id = g.id
+         AND NOT ($1 = ANY(cm.read_by))
+        ) AS unread_count
       
-       
        FROM groups g
 
           JOIN group_members gm ON g.id = gm.group_id
@@ -156,6 +183,15 @@ const getChattingGroups = async (req, res, next) => {
          LEFT JOIN users s on g.sender_id = s.id
 
         LEFT JOIN users r on g.recipient_id = r.id
+
+
+        LEFT JOIN LATERAL (
+        SELECT cm.message, cm.message_time
+        FROM chat_messages cm
+        WHERE cm.group_id = g.id
+        ORDER BY cm.message_time DESC
+        LIMIT 1
+    ) cm ON true
 
             
          ${whereClause} 
@@ -333,6 +369,7 @@ const initializeSocket = (httpServer) => {
       recipient_id,
       group_id,
       message,
+      attachment,
       message_time,
     }) => {
       try {
@@ -343,6 +380,7 @@ const initializeSocket = (httpServer) => {
           recipient_id,
           group_id,
           message,
+          attachment,
           message_time
         );
 
@@ -351,6 +389,7 @@ const initializeSocket = (httpServer) => {
           sender_id,
           recipient_id,
           group_id,
+          attachment,
           message_time,
         });
       } catch (error) {

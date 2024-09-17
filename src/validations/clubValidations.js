@@ -28,7 +28,10 @@ const clubValidations = {
     }),
     description: Joi.string().optional(),
     fee: Joi.number().min(0).optional(),
-    is_paid: Joi.boolean().optional(),
+    is_paid: Joi.boolean().required().messages({
+      "boolean.base": "Paid status should be a boolean.",
+      "any.required": "Paid status is a required field.",
+    }),
     user_id: Joi.string().uuid().required().messages({
       "string.base": "User ID should be a type of 'text'.",
       "string.empty": "User ID cannot be an empty field.",

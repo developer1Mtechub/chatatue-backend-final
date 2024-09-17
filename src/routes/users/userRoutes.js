@@ -11,6 +11,7 @@ const {
   updateUserAccount,
   removeUserImages,
   updatePassword,
+  loginAdmin,
 } = require("../../controller/User/userController");
 const {
   validateBody,
@@ -31,6 +32,7 @@ router
   .post(validateBody(userValidation.createUser), createUser);
 
 router.route("/login").post(validateBody(userValidation.loginUser), loginUser);
+router.route("/admin/login").post(loginAdmin);
 router.route("/verify-email").post(verifyEmail);
 router.route("/verify-otp").post(verifyOTP);
 router.route("/reset-password/:id").patch(resetPassword);

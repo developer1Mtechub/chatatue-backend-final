@@ -481,6 +481,10 @@ const getEvent = async (req, res, next) => {
     const { rows, rowCount } = await pool.query(
       `
       SELECT e.*, 
+
+        g.id AS group_id ,
+
+
              json_build_object(
                 'id', u.id,
                 'username', u.username,
@@ -507,6 +511,9 @@ const getEvent = async (req, res, next) => {
                 LEFT JOIN users u ON em.user_id = u.id
                 WHERE em.event_id = e.id
               ) AS joinees,
+
+
+
 
              (
                SELECT json_agg(a)
@@ -538,6 +545,7 @@ const getEvent = async (req, res, next) => {
              
       FROM events e
       LEFT JOIN users u ON e.creator_id = u.id
+      LEFT JOIN groups g ON e.id = g.event_id
       WHERE e.id = $1
       `,
       [id]

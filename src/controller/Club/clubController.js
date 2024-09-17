@@ -64,8 +64,9 @@ const getClub = async (req, res, next) => {
       ` SELECT 
 
             c.*,
+            g.id AS group_id,
 
-            json_build_object('id' , u.id , 'username' , u.username , 'profile_image', u.profile_image, 'email', u.email , 'rating' , u.rating ) AS creator,
+            json_build_object('id' , u.id , 'username' , u.username , 'profile_image', u.profile_image, 'email', u.email , 'rating' , u.rating , 'age', u.age , 'gender', u.gender, 'bio', u.bio ) AS creator,
 
             (
             SELECT JSON_AGG(ct)
@@ -98,16 +99,31 @@ const getClub = async (req, res, next) => {
             ) AS events,
             
             (
-            SELECT JSON_AGG(cm)
-            FROM club_members cm
-            WHERE cm.club_id = c.id
+              SELECT JSON_AGG(
+                json_build_object(
+                  'id', u.id,
+                  'username', u.username,
+                  'profile_image', u.profile_image,
+                  'email', u.email,
+                  'member_role', cm.member_role,
+                  'rating', u.rating,
+                  'age', u.age,
+                  'gender', u.gender,
+                  'bio', u.bio
+                )
+              ) AS members
+              FROM club_members cm
+              LEFT JOIN users u ON u.id = cm.user_id
+              WHERE cm.club_id = c.id
             ) AS members
 
+           
 
           FROM club c
           LEFT JOIN users u ON u.id = c.user_id
+          LEFT JOIN groups g on c.id = g.club_id
           WHERE c.id = $1
-          GROUP BY c.id , u.id 
+          GROUP BY c.id , u.id  , g.id
          `,
       [id]
     );
@@ -173,10 +189,17 @@ const getClubs = async (req, res, next) => {
             SELECT JSON_AGG(ct)
             FROM category ct
             WHERE ct.id = ANY(c.category_ids)
-            ) AS categories
+            ) AS categories,
+
+              (
+            SELECT COUNT(*)
+            FROM club_members cm
+            WHERE cm.club_id = c.id
+            ) AS members_count
 
               FROM club c
               LEFT JOIN users u ON u.id = c.user_id
+              
           ${whereClause}
           GROUP BY c.id ,u.id
           ORDER BY c.${sortField} ${sortOrder} 
